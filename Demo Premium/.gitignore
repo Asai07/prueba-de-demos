@@ -8,7 +8,7 @@ npm-debug.log*
 # Tailwind — el output se genera con: npm run build
 # No es necesario versionarlo; cualquiera puede regenerarlo
 # ================================
-css/output.css
+# css/output.css
 
 # ================================
 # Seguridad — NUNCA subir a GitHub
