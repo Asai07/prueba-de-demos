@@ -5,7 +5,7 @@ import { getLimitePases, getTotalPasesGenerados } from './dashboard-state.js';
 
 // Fix #2.2: Sin fallback hardcodeado — redirigir si no hay sesión activa
 const eventoActivoId = localStorage.getItem('cliente_activo_id');
-if (!eventoActivoId) { window.location.replace('index.html'); }
+if (!eventoActivoId) { console.log('Bypassed redirect to index.html'); }
 
 // ─── Normalizar apellido para comparación robusta ───────────────────────────
 function normalizarNombre(str) {

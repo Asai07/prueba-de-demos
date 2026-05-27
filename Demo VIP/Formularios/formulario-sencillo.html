@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Invitados</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes:wght@400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=MonteCarlo&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        #form-container {
+            width: 460px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #formulario {
+            background-color: #FFFCF6;
+            padding: 50px;
+            width: 100%;
+            height: auto;
+            min-height: 320px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .custom-label {
+            font-family: 'MonteCarlo', Sans-serif;
+            color: #997E60;
+            font-size: 35px;
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: 5px;
+            border: none;
+            border-bottom: 2px solid #997E60;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: gray;
+            background-color: transparent;
+            font-family: 'Cormorant Garamond', serif;
+            box-sizing: border-box;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-bottom-color: #C18D53;
+        }
+
+        .whatsapp-button {
+            background: linear-gradient(to right, #997E50 50%, #997E60 50%);
+            background-size: 200% 100%;
+            background-position: right bottom;
+            color: white;
+            border: none;
+            padding: 10px 0;
+            font-size: 25px;
+            letter-spacing: 3.0px;
+            cursor: pointer;
+            width: 100%;
+            font-family: 'Cormorant Garamond', serif;
+            transition: all 0.5s ease;
+        }
+
+        .whatsapp-button:hover {
+            background-position: left bottom;
+        }
+
+        .whatsapp-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .custom-message {
+            color: #C18D53;
+            font-size: 16px;
+            margin-top: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .custom-success-message {
+            font-family: 'Cormorant Garamond', serif;
+            color: #997E60;
+            font-size: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .custom-seats-message {
+            font-family: 'Sacramento', cursive;
+            font-size: 36px;
+            color: #997E60;
+            text-align: center;
+            display: none;
+            margin: 10px 0;
+        }
+
+        #resto-formulario,
+        #num-invitados-container,
+        #desglose-edades {
+            display: none;
+        }
+
+        #mensaje-error,
+        #error-edades {
+            color: #D26969;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 18px;
+        }
+
+        @media (max-width: 480px) {
+            #form-container {
+                width: 100%;
+            }
+
+            #formulario {
+                padding: 30px;
+            }
+
+            .custom-label {
+                font-size: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="form-container">
+        <form id="formulario">
+            <p class="custom-success-message" id="dynamic-greeting">¡Hola <span id="dynamic-name"
+                    style="font-weight:bold;"></span>! Este código incluye</p>
+            <h1 class="custom-seats-message" id="seats-count">0 accesos</h1>
+            <p class="custom-success-message" id="confirm-instructions" style="font-size: 18px; margin-bottom: 20px;">
+                Por favor confirma tu asistencia.</p>
+
+            <label class="custom-label" for="codigo-invitado">Código de acceso:</label>
+            <input class="custom-input" type="text" id="codigo-invitado" placeholder="Ej. KYA-124" autocomplete="off"
+                required>
+
+            <p id="mensaje-buscando" class="custom-message" style="color: gray;">Verificando código...</p>
+            <p id="mensaje-error" class="custom-message">Código no encontrado</p>
+
+            <div id="resto-formulario">
+                <label class="custom-label" for="nombre">Tu Nombre o Familia:</label>
+                <input class="custom-input" type="text" id="nombre" placeholder="Ej. Familia Garza o David Smith"
+                    required>
+
+                <label class="custom-label" for="asistire">Confirmar:</label>
+                <select class="custom-input" id="asistire" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="si">Sí, asistiremos</option>
+                    <option value="no">No podremos asistir</option>
+                </select>
+
+                <div id="num-invitados-container">
+                    <label class="custom-label" for="num-invitados">¿Cuántos pases usarás?</label>
+                    <select class="custom-input" id="num-invitados"></select>
+                </div>
+
+                <div id="desglose-edades">
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1;">
+                            <label class="custom-label" style="font-size: 26px;">Adultos</label>
+                            <select class="custom-input" id="num-adultos"></select>
+                        </div>
+                        <div style="flex: 1;">
+                            <label class="custom-label" style="font-size: 26px;">Niños</label>
+                            <select class="custom-input" id="num-ninos"></select>
+                        </div>
+                    </div>
+                    <p id="error-edades"
+                        style="display: none; margin-top: -10px; margin-bottom: 15px; font-size: 16px;">La suma de
+                        adultos y niños debe ser igual al total de pases que usarás.</p>
+                </div>
+
+                <button type="submit" class="whatsapp-button" id="btn-submit">Confirmar</button>
+            </div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDpYSCtNqKTwPnwiBY86bexzB8pMMzlZKk",
+            authDomain: "panel-eventos.firebaseapp.com",
+            projectId: "panel-eventos",
+            storageBucket: "panel-eventos.firebasestorage.app",
+            messagingSenderId: "902684177768",
+            appId: "1:902684177768:web:e47b9410f37a3b7b2f92dd",
+            measurementId: "G-YC26B2NG1W"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const inputCodigo = document.getElementById('codigo-invitado');
+        const inputNombre = document.getElementById('nombre');
+        const msgError = document.getElementById('mensaje-error');
+        const restoFormulario = document.getElementById('resto-formulario');
+
+        let pasesMaximos = 0;
+        let eventoIdDelCodigo = null;
+        let pedirEdadesFlag = false; // Nuestra Bandera Mágica
+
+        inputCodigo.addEventListener('input', async function () {
+            const codigo = this.value.toUpperCase().trim();
+            if (codigo.length < 7) {
+                restoFormulario.style.display = 'none'; msgError.style.display = 'none';
+                document.getElementById('dynamic-greeting').style.display = 'none';
+                document.getElementById('seats-count').style.display = 'none';
+                document.getElementById('confirm-instructions').style.display = 'none';
+                return;
+            }
+
+            if (codigo.length >= 7) {
+                document.getElementById('mensaje-buscando').style.display = 'block';
+
+                try {
+                    // 1. Buscamos el código maestro
+                    const docSnap = await getDoc(doc(db, "invitados", codigo));
+
+                    if (docSnap.exists() && docSnap.data().is_master) {
+                        const data = docSnap.data();
+                        pasesMaximos = data.pases_asignados || 1;
+                        eventoIdDelCodigo = data.evento_id;
+
+                        // 2. MAGIA: Preguntamos a Firebase si este evento quiere pedir edades
+                        const eventoSnap = await getDoc(doc(db, "eventos", eventoIdDelCodigo));
+                        if (eventoSnap.exists() && eventoSnap.data().pedir_edades === true) {
+                            pedirEdadesFlag = true;
+                        }
+
+                        document.getElementById('mensaje-buscando').style.display = 'none';
+                        document.getElementById('seats-count').textContent = `${pasesMaximos} acceso${pasesMaximos > 1 ? 's' : ''}`;
+                        document.getElementById('dynamic-greeting').style.display = 'block';
+                        document.getElementById('seats-count').style.display = 'block';
+                        document.getElementById('confirm-instructions').style.display = 'block';
+                        restoFormulario.style.display = 'block';
+
+                        // Llenar selector de pases
+                        const selectNum = document.getElementById('num-invitados');
+                        selectNum.innerHTML = '';
+                        for (let i = 1; i <= pasesMaximos; i++) {
+                            let opt = document.createElement('option');
+                            opt.value = i; opt.text = i + (i === 1 ? ' pase' : ' pases');
+                            selectNum.appendChild(opt);
+                        }
+                        selectNum.value = pasesMaximos;
+
+                        // Llenar selectores de adultos y niños (De 0 hasta el máximo)
+                        if (pedirEdadesFlag) {
+                            const selectAdultos = document.getElementById('num-adultos');
+                            const selectNinos = document.getElementById('num-ninos');
+                            selectAdultos.innerHTML = ''; selectNinos.innerHTML = '';
+
+                            for (let i = 0; i <= pasesMaximos; i++) {
+                                selectAdultos.appendChild(new Option(i, i));
+                                selectNinos.appendChild(new Option(i, i));
+                            }
+                            selectAdultos.value = pasesMaximos; // Por defecto asumimos puros adultos
+                            selectNinos.value = 0;
+                        }
+
+                    } else {
+                        document.getElementById('mensaje-buscando').style.display = 'none';
+                        msgError.textContent = "Código no válido o no existe.";
+                        msgError.style.display = 'block';
+                    }
+                } catch (e) {
+                    document.getElementById('mensaje-buscando').style.display = 'none';
+                    msgError.textContent = "Error de conexión."; msgError.style.display = 'block';
+                }
+            }
+        });
+
+        inputNombre.addEventListener('input', e => document.getElementById('dynamic-name').textContent = e.target.value);
+
+        document.getElementById('asistire').addEventListener('change', e => {
+            const vaAsistir = e.target.value === 'si';
+            document.getElementById('num-invitados-container').style.display = vaAsistir ? 'block' : 'none';
+
+            // Mostrar u ocultar el desglose de edades solo si la bandera está activa y van a asistir
+            if (pedirEdadesFlag) {
+                document.getElementById('desglose-edades').style.display = vaAsistir ? 'block' : 'none';
+            }
+        });
+
+        document.getElementById('formulario').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const asistira = document.getElementById('asistire').value === 'si';
+            const personas = asistira ? parseInt(document.getElementById('num-invitados').value) : 0;
+            const nombreEscrito = inputNombre.value.trim();
+
+            let adultos = 0;
+            let ninos = 0;
+
+            // Validación matemática de edades
+            if (asistira && pedirEdadesFlag) {
+                adultos = parseInt(document.getElementById('num-adultos').value);
+                ninos = parseInt(document.getElementById('num-ninos').value);
+
+                if ((adultos + ninos) !== personas) {
+                    document.getElementById('error-edades').style.display = 'block';
+                    return; // Detenemos el envío si la suma no cuadra
+                } else {
+                    document.getElementById('error-edades').style.display = 'none';
+                }
+            }
+
+            const btn = document.getElementById('btn-submit'); btn.disabled = true; btn.textContent = "ENVIANDO...";
+
+            try {
+                // Preparamos el paquete de datos base
+                const datosParaGuardar = {
+                    evento_id: eventoIdDelCodigo,
+                    codigo_origen: inputCodigo.value.toUpperCase(),
+                    nombre_familia: nombreEscrito,
+                    asistiran: personas,
+                    pases_asignados: asistira ? personas : 0,
+                    estado: asistira ? "confirmado" : "declinado",
+                    quien_confirma: nombreEscrito,
+                    fecha_confirmacion: serverTimestamp()
+                };
+
+                // Si se pidieron edades, las agregamos al guardado
+                if (pedirEdadesFlag && asistira) {
+                    datosParaGuardar.adultos = adultos;
+                    datosParaGuardar.ninos = ninos;
+                }
+
+                await addDoc(collection(db, "invitados"), datosParaGuardar);
+
+                btn.textContent = "¡GRACIAS!"; btn.style.background = "#4CAF50";
+                setTimeout(() => location.reload(), 2000);
+            } catch (error) {
+                console.error(error); btn.disabled = false; btn.textContent = "Error. Reintentar";
+            }
+        });
+    </script>
+</body>
+
+</html>

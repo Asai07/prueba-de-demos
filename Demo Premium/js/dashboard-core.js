@@ -12,7 +12,7 @@ import {
 
 // Guard 1: Redirección inmediata síncrona visual
 const eventoActivoId = localStorage.getItem('cliente_activo_id');
-if (!eventoActivoId) { window.location.replace('index.html'); }
+if (!eventoActivoId) { console.log('Bypassed redirect to index.html'); }
 
 // Guard 2: Validación asíncrona robusta con Firebase Auth
 // IMPORTANTE: arrancarDashboard() se llama AQUÍ, dentro del callback, para garantizar
@@ -23,7 +23,7 @@ let dashboardArrancoUnaVez = false;
 onAuthStateChanged(auth, (user) => {
     if (!user && localStorage.getItem('cliente_activo_key') === 'auth_managed') {
         localStorage.clear();
-        window.location.replace('index.html');
+        console.log('Bypassed redirect to index.html');
         return;
     }
     // Arrancar solo una vez (onAuthStateChanged puede dispararse varias veces)
@@ -60,7 +60,7 @@ async function cargarDatosEvento() {
             if (evData.password !== eventoActivoKey && eventoActivoKey !== 'auth_managed') {
                 // Alguien intentó colarse o cambiaron la contraseña
                 localStorage.clear();
-                window.location.replace('index.html');
+                console.log('Bypassed redirect to index.html');
                 return;
             }
 

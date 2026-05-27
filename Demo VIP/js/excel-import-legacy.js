@@ -15,7 +15,7 @@ import { collection, doc, getDocs, query, where, writeBatch, serverTimestamp } f
 import { getLimitePases, getTotalPasesGenerados } from './dashboard-state.js';
 
 const eventoActivoId = localStorage.getItem('cliente_activo_id');
-if (!eventoActivoId) { window.location.replace('index.html'); }
+if (!eventoActivoId) { console.log('Bypassed redirect to index.html'); }
 
 // ─── Normalizar texto para comparaciones ─────────────────────
 function normalizarTexto(str) {

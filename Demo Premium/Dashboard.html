@@ -32,11 +32,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        const sesionActiva = localStorage.getItem('cliente_activo_id');
-
-        if (!sesionActiva) {
-            window.location.replace('index.html');
-
+        // DEMO MODE: Auto-set session if missing
+        if (!localStorage.getItem('cliente_activo_id')) {
+            localStorage.setItem('cliente_activo_id', 'demo-premium-123');
+            localStorage.setItem('cliente_activo_key', 'demo');
+            localStorage.setItem('cliente_nombre', 'Demo Premium');
         }
     </script>
     <style>

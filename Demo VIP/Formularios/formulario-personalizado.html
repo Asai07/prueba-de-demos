@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Confirmación de Asistencia</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/output.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'title': ['"Playfair Display"', 'serif'],
+                        'ui': ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand': '#F43F5E',       /* Coral/Rosa Vibrante */
+                        'brand-light': '#FFE4E6', /* Fondo suave rosado */
+                        'brand-dark': '#BE123C',  /* Rosa intenso oscuro */
+                        'bg-main': '#F8FAFC',     /* Gris muy sutil azulado */
+                        'text-dark': '#0F172A',
+                        'text-muted': '#64748B',
+                    },
+                    boxShadow: {
+                        'glowing': '0 10px 40px -10px rgba(244, 63, 94, 0.4)', /* Sombra brillante del color principal */
+                        'floating': '0 10px 30px -5px rgba(0, 0, 0, 0.05)',
+                        'inner-soft': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Contenedor Principal Flotante */
+        .glass-container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            padding: 40px 48px;
+            position: relative;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 600px) {
+            .glass-container {
+                padding: 32px 24px;
+                border-radius: 28px;
+            }
+        }
+
+        /* Títulos */
+        h1,
+        h2,
+        h3 {
+            font-family: 'Playfair Display', serif;
+            color: #0F172A;
+            margin-bottom: 8px;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 700;
+            color: #334155;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Transiciones de Pasos */
+        .form-step {
+            display: none;
+            animation: slideFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            flex-direction: column;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 4px;
+        }
+
+        .form-step.active {
+            display: flex;
+        }
+
+        @keyframes slideFadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Barra de Progreso */
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: #F1F5F9;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FB7185, #E11D48);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 20px;
+        }
+
+        /* Inputs Modernos */
+        input[type="text"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #F1F5F9;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+            outline: none;
+        }
+
+        input[type="text"]:focus,
+        input[type="tel"]:focus {
+            border-color: #FB7185;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.1);
+        }
+
+        input::placeholder {
+            color: #94A3B8;
+            font-weight: 400;
+        }
+
+        /* Radio Cards (Sí / No) */
+        .radio-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .radio-option input {
+            display: none;
+        }
+
+        .radio-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: #F8FAFC;
+            border: 2px solid #F1F5F9;
+            padding: 24px 16px;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            color: #64748B;
+            text-align: center;
+        }
+
+        .radio-option input:checked+label {
+            border-color: #F43F5E;
+            background-color: #FFF1F2;
+            color: #E11D48;
+            box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .radio-icon {
+            font-size: 32px;
+            transition: transform 0.3s;
+        }
+
+        .radio-option input:checked+label .radio-icon {
+            transform: scale(1.15);
+        }
+
+        /* Select Personalizado Refinado */
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            width: 100%;
+        }
+
+        .custom-select__trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #334155;
+            background: #ffffff;
+            border: 2px solid #F1F5F9;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .custom-select.open .custom-select__trigger {
+            border-color: #F43F5E;
+            box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.1);
+        }
+
+        .custom-options {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            z-index: 50;
+            transition: all 0.2s;
+            border: 1px solid #F1F5F9;
+            transform: translateY(-10px);
+        }
+
+        .custom-select.open .custom-options {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        .custom-option {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .custom-option:last-child {
+            margin-bottom: 0;
+        }
+
+        .custom-option:hover,
+        .custom-option.selected {
+            background-color: #FFF1F2;
+            color: #E11D48;
+        }
+
+        /* Botones de Acción */
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: auto;
+            padding-top: 24px;
+        }
+
+        .btn {
+            padding: 16px 28px;
+            border-radius: 100px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-prev {
+            background: #F8FAFC;
+            color: #64748B;
+            flex: 0.3;
+        }
+
+        .btn-prev:hover {
+            background: #F1F5F9;
+            color: #0F172A;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #F43F5E, #E11D48);
+            color: #ffffff;
+            flex: 1;
+            box-shadow: var(--tw-shadow-glowing);
+        }
+
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -10px rgba(225, 29, 72, 0.6);
+        }
+
+        .btn-next:disabled {
+            background: #CBD5E0;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Contadores Modernos (Circulares) */
+        .counter-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border: 2px solid #F1F5F9;
+            padding: 16px 24px;
+            border-radius: 24px;
+            margin-bottom: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .counter-box:hover {
+            border-color: #FFE4E6;
+        }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-count {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #F8FAFC;
+            color: #0F172A;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 20px;
+            border: none;
+        }
+
+        .btn-count:hover {
+            background: #FFF1F2;
+            color: #E11D48;
+            transform: scale(1.05);
+        }
+
+        .btn-count:active {
+            transform: scale(0.95);
+        }
+
+        /* Scrollbar interno */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #CBD5E0;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* Tarjeta de Asistente Dinámica */
+        .card-asistente {
+            background: #ffffff;
+            border: 2px solid #F1F5F9;
+            border-radius: 24px;
+            padding: 28px 24px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: var(--tw-shadow-floating);
+        }
+
+        .badge-asistente {
+            position: absolute;
+            top: -14px;
+            left: 24px;
+            background: linear-gradient(135deg, #0F172A, #334155);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-asistente-flat {
+            width: 100%;
+            border: none;
+            border-bottom: 2px solid #E2E8F0;
+            padding: 12px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #0F172A;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+            background: transparent;
+            outline: none;
+        }
+
+        .input-asistente-flat:focus {
+            border-bottom-color: #F43F5E;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="glass-container">
+
+        <div id="header-section" class="shrink-0">
+            <div class="progress-track hidden" id="progress-container">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <form id="formulario" class="flex-1 flex flex-col overflow-hidden">
+
+            <div class="form-step active justify-center text-center" data-step="1">
+                <div
+                    class="w-24 h-24 mx-auto bg-brand-light rounded-full flex items-center justify-center mb-8 text-brand">
+                    <i class="ph-fill ph-envelope-open text-5xl"></i>
+                </div>
+                <h1 class="text-4xl md:text-5xl mb-4">Tu Invitación</h1>
+                <p class="text-text-muted text-base mb-10 leading-relaxed">Por favor, ingresa el código único que
+                    recibiste para acceder a los detalles del evento.</p>
+
+                <input type="text" id="codigo-invitado" placeholder="CÓDIGO" maxlength="9" autocomplete="off"
+                    class="text-center font-bold text-3xl tracking-[0.3em] uppercase" required>
+
+                <button type="button" class="btn btn-next w-full" onclick="verificarCodigo()" id="btn-verificar">Acceder
+                    al Evento <i class="ph-bold ph-arrow-right"></i></button>
+            </div>
+
+            <div class="form-step" data-step="2">
+                <div class="text-center mb-8">
+                    <span
+                        class="inline-block bg-slate-100 text-slate-500 text-xs font-bold uppercase tracking-widest py-1.5 px-4 rounded-full mb-4">Pases
+                        Reservados</span>
+                    <h2 class="text-4xl md:text-5xl mb-2 text-brand">Familia <span id="family-surname"
+                            class="text-text-dark"></span></h2>
+                    <p class="text-lg font-medium text-text-muted" id="guest-members"></p>
+                    <div class="inline-flex items-center gap-2 bg-brand-light text-brand font-extrabold text-sm mt-4 px-5 py-2 rounded-full"
+                        id="seats-display"></div>
+                </div>
+
+                <div id="mesa-display"
+                    class="hidden mb-8 bg-slate-900 rounded-[24px] p-6 flex items-center justify-between shadow-xl">
+                    <div class="text-left">
+                        <p class="text-[11px] text-slate-400 uppercase tracking-widest font-bold mb-1">Mesa Asignada</p>
+                        <p class="text-3xl font-title font-bold text-white leading-none" id="mesa-numero">Mesa 0</p>
+                    </div>
+                    <div
+                        class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-white shrink-0 backdrop-blur-md">
+                        <i class="ph-fill ph-chair text-3xl"></i>
+                    </div>
+                </div>
+
+                <label class="text-center text-base text-text-muted mb-4">¿Tendremos el honor de contar con su
+                    presencia?</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" name="rsvp" id="rsvp-si" value="si">
+                        <label for="rsvp-si"><i class="ph-fill ph-confetti radio-icon"></i> Sí, asistiremos</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" name="rsvp" id="rsvp-no" value="no">
+                        <label for="rsvp-no"><i class="ph-fill ph-hand-waving radio-icon"></i> No podremos</label>
+                    </div>
+                </div>
+
+                <div id="container-nombre-confirma" class="hidden transition-all duration-300 opacity-0">
+                    <label>¿Quién está confirmando esta invitación?</label>
+                    <input type="text" id="nombre" placeholder="Escribe tu nombre completo">
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-next w-full" onclick="siguientePaso()">Continuar <i
+                            class="ph-bold ph-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <div class="form-step custom-scrollbar" data-step="3">
+                <h3 class="text-4xl mb-2 text-center text-brand">Pases a utilizar</h3>
+                <p class="text-text-muted text-base mb-8 text-center leading-relaxed">De los lugares reservados,
+                    confirma cuántos ocuparán realmente.</p>
+
+                <div class="counter-box shadow-sm">
+                    <div>
+                        <p class="font-bold text-lg text-text-dark">Total Asistentes</p>
+                        <p class="text-sm text-text-muted mt-1">Máximo: <span id="max-pases-txt"
+                                class="font-bold text-brand"></span> pases</p>
+                    </div>
+                    <div class="counter-controls">
+                        <button type="button" class="btn-count" onclick="updateCounter('total', -1)"><i
+                                class="ph-bold ph-minus"></i></button>
+                        <span id="counter-total" class="text-2xl font-black w-8 text-center text-brand">1</span>
+                        <button type="button" class="btn-count" onclick="updateCounter('total', 1)"><i
+                                class="ph-bold ph-plus"></i></button>
+                    </div>
+                </div>
+
+                <div id="desglose-edades"
+                    class="hidden mt-8 pt-6 border-t border-dashed border-slate-200 animate-fade-in">
+                    <label class="mb-4 text-center text-brand">Desglose por edades</label>
+
+                    <div class="counter-box bg-slate-50 border-transparent">
+                        <p class="font-bold text-text-dark flex items-center gap-3"><i
+                                class="ph-fill ph-user text-2xl text-slate-400"></i> Adultos</p>
+                        <div class="counter-controls">
+                            <button type="button" class="btn-count bg-white shadow-sm"
+                                onclick="updateCounter('adultos', -1)"><i class="ph-bold ph-minus"></i></button>
+                            <span id="counter-adultos"
+                                class="text-2xl font-black w-8 text-center text-text-dark">1</span>
+                            <button type="button" class="btn-count bg-white shadow-sm"
+                                onclick="updateCounter('adultos', 1)"><i class="ph-bold ph-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="counter-box bg-slate-50 border-transparent">
+                        <p class="font-bold text-text-dark flex items-center gap-3"><i
+                                class="ph-fill ph-baby text-2xl text-slate-400"></i> Niños</p>
+                        <div class="counter-controls">
+                            <button type="button" class="btn-count bg-white shadow-sm"
+                                onclick="updateCounter('ninos', -1)"><i class="ph-bold ph-minus"></i></button>
+                            <span id="counter-ninos" class="text-2xl font-black w-8 text-center text-text-dark">0</span>
+                            <button type="button" class="btn-count bg-white shadow-sm"
+                                onclick="updateCounter('ninos', 1)"><i class="ph-bold ph-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-prev" onclick="irPaso(2)"><i
+                            class="ph-bold ph-arrow-left text-xl"></i></button>
+                    <button type="button" class="btn btn-next" onclick="validarPaso3()">Personalizar <i
+                            class="ph-bold ph-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <div class="form-step custom-scrollbar pt-4" data-step="4">
+                <div class="text-center mb-8">
+                    <h3 class="text-4xl mb-2 text-brand">Detalles</h3>
+                    <p class="text-text-muted text-base">Ayúdanos a personalizar la experiencia de cada uno.</p>
+                </div>
+
+                <div id="asistentes-dinamicos-container" class="space-y-6 pt-2">
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-prev" onclick="irPaso(3)"><i
+                            class="ph-bold ph-arrow-left text-xl"></i></button>
+                    <button type="button" class="btn btn-next" onclick="validarPaso4()">Siguiente <i
+                            class="ph-bold ph-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <div class="form-step justify-center text-center" data-step="5">
+                <div id="icono-final-bg"
+                    class="w-24 h-24 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-8 text-blue-500 shadow-sm relative transition-colors duration-500">
+                    <i id="icono-final" class="ph-fill ph-envelope-simple text-5xl relative z-10 transition-all"></i>
+                    <div class="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20 hidden"
+                        id="ping-final"></div>
+                </div>
+
+                <h3 id="titulo-final" class="text-4xl md:text-5xl mb-4 text-text-dark">Tu Ticket Digital</h3>
+                <p id="texto-final" class="text-text-muted text-lg mb-8 px-4 leading-relaxed">Déjanos tu correo
+                    electrónico para
+                    enviarte tu pase de acceso con código QR y los detalles del evento.</p>
+
+                <div id="contenedor-input-final" class="w-full">
+                    <input type="email" id="correo-invitado" placeholder="ejemplo@correo.com"
+                        class="text-center font-bold text-xl tracking-wide text-brand w-full p-4 border-2 border-slate-200 rounded-xl focus:border-brand focus:outline-none transition-colors mb-2">
+                    <span class="text-xs text-slate-400 block mt-2">*Asegúrate de escribirlo bien para recibir tu
+                        QR.</span>
+                </div>
+
+                <div class="btn-group w-full mt-6">
+                    <button type="button" class="btn btn-prev" onclick="retrocederDesdeFinal()"><i
+                            class="ph-bold ph-arrow-left text-xl"></i></button>
+                    <button type="submit" id="btn-submit" class="btn btn-next">Enviar Respuesta <i
+                            class="ph-bold ph-paper-plane-tilt"></i></button>
+                </div>
+            </div>
+
+            <div class="form-step hidden justify-center text-center m-auto" id="pantalla-mensaje">
+                <div class="w-full flex flex-col items-center">
+                    <div id="icono-mensaje-bg"
+                        class="w-28 h-28 mx-auto bg-brand-light rounded-full flex items-center justify-center mb-8 shadow-glowing">
+                        <i id="icono-mensaje" class="ph-fill ph-info text-6xl text-brand"></i>
+                    </div>
+                    <h3 id="titulo-mensaje" class="text-4xl md:text-5xl font-bold mb-4 text-text-dark">Mensaje</h3>
+                    <p id="texto-mensaje" class="text-text-muted text-xl leading-relaxed max-w-md mx-auto"></p>
+                    <div id="contenedor-descarga" class="mt-8 hidden w-full flex justify-center">
+                        <button type="button" id="btn-descargar-ticket" class="btn btn-next w-full md:w-auto px-6 py-4 bg-brand text-white font-bold rounded-2xl shadow-floating hover:shadow-glowing hover:bg-brand-dark focus:ring-4 focus:ring-brand/30 transition-all flex items-center justify-center gap-2">
+                            <i class="ph-bold ph-download-simple text-2xl"></i> Descargar mi Ticket Oficial
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <script type="module">
+        // Fix #1.2: Firebase config centralizado — una sola fuente de verdad
+        import { db } from '../js/firebase-config.js';
+        import { doc, getDoc, updateDoc, serverTimestamp, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ESTADOS
+        let pasoActual = 1; const totalPasos = 5; let maxPasesPermitidos = 0; let docRefActual = null; let declinando = false;
+        let flagMostrarMesa = false, flagPedirEdades = false, flagPedirNombres = false, flagPedirMenu = false, flagPedirCorreo = false; let countTotal = 1; let countAdultos = 1; let countNinos = 0;
+        let emailOrganizadorGlobal = "";
+        let nombreEventoGlobal = "";
+        let nombreFamiliaGlobal = "";
+        let mesaGlobal = "";
+        // UI ELEMENTS
+        const inputCodigo = document.getElementById('codigo-invitado');
+        const progressBar = document.getElementById('progress-container');
+        const progressFill = document.getElementById('progress-fill');
+
+        // --- SISTEMA DE NAVEGACIÓN Y PROGRESO ---
+        window.irPaso = function (pasoDestino) {
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            const destino = document.querySelector(`.form-step[data-step="${pasoDestino}"]`);
+            if (destino) destino.classList.add('active');
+
+            pasoActual = pasoDestino;
+
+            if (pasoDestino > 1 && pasoDestino < 6) {
+                progressBar.classList.remove('hidden');
+                const porcentaje = ((pasoDestino - 1) / 4) * 100;
+                progressFill.style.width = `${porcentaje}%`;
+            } else {
+                progressBar.classList.add('hidden');
+            }
+        }
+
+        function mostrarMensajeFijo(titulo, texto, iconoClase, colorTexto, colorBg, mostrarBotonDescarga = false) {
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            progressBar.classList.add('hidden');
+            const pantalla = document.getElementById('pantalla-mensaje');
+            pantalla.classList.remove('hidden');
+            pantalla.classList.add('active');
+            document.getElementById('titulo-mensaje').innerText = titulo;
+            document.getElementById('texto-mensaje').innerText = texto;
+            document.getElementById('icono-mensaje').className = `ph-fill ${iconoClase} text-6xl ${colorTexto}`;
+            document.getElementById('icono-mensaje-bg').className = `w-28 h-28 mx-auto ${colorBg} rounded-full flex items-center justify-center mb-8 shadow-xl`;
+            const btnContenedor = document.getElementById('contenedor-descarga');
+            if (btnContenedor) {
+                if (mostrarBotonDescarga) { btnContenedor.classList.remove('hidden'); }
+                else { btnContenedor.classList.add('hidden'); }
+            }
+        }
+
+        // --- LÓGICA DEL SELECT PERSONALIZADO ---
+        window.inicializarSelects = function () {
+            document.querySelectorAll('.custom-select-wrapper').forEach(wrapper => {
+                if (wrapper.dataset.init === 'true') return;
+                wrapper.dataset.init = 'true';
+
+                const select = wrapper.querySelector('.custom-select');
+                const trigger = wrapper.querySelector('.custom-select__trigger');
+                const options = wrapper.querySelectorAll('.custom-option');
+                const hiddenInput = wrapper.querySelector('.hidden-menu-input');
+
+                trigger.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    document.querySelectorAll('.custom-select.open').forEach(s => { if (s !== select) s.classList.remove('open') });
+                    select.classList.toggle('open');
+                });
+
+                options.forEach(option => {
+                    option.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        if (!this.classList.contains('selected')) {
+                            const siblings = this.parentNode.querySelectorAll('.custom-option');
+                            siblings.forEach(s => s.classList.remove('selected'));
+                            this.classList.add('selected');
+
+                            trigger.innerHTML = this.innerHTML + '<i class="ph-bold ph-caret-down text-text-muted"></i>';
+                            hiddenInput.value = this.getAttribute('data-value');
+                        }
+                        select.classList.remove('open');
+                    });
+                });
+            });
+
+            window.addEventListener('click', function (e) {
+                document.querySelectorAll('.custom-select.open').forEach(select => {
+                    if (!select.contains(e.target)) select.classList.remove('open');
+                });
+            });
+        }
+
+
+        // --- PASO 1: VERIFICAR CÓDIGO ---
+        window.verificarCodigo = async function () {
+            const codigo = inputCodigo.value.toUpperCase().trim();
+            if (codigo.length < 9) return Swal.fire({ icon: 'warning', title: 'Código incompleto', confirmButtonColor: '#F43F5E' });
+
+            const btn = document.getElementById('btn-verificar');
+            btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-xl"></i> Verificando...'; btn.disabled = true;
+
+            try {
+                docRefActual = doc(db, "invitados", codigo);
+                const docSnap = await getDoc(docRefActual);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+
+                    const eventoSnap = await getDoc(doc(db, "eventos", data.evento_id));
+                    if (!eventoSnap.exists() || eventoSnap.data().paquete_contratado !== 'vip') {
+                        btn.innerHTML = 'Acceder al Evento <i class="ph-bold ph-arrow-right"></i>'; btn.disabled = false;
+                        return mostrarMensajeFijo('Acceso Restringido', 'Este código no pertenece a un evento Premium.', 'ph-lock-key', 'text-amber-500', 'bg-amber-100');
+                    }
+                    const datosEvento = eventoSnap.data();
+                    emailOrganizadorGlobal = datosEvento.email;
+                    nombreEventoGlobal = datosEvento.nombre_evento;
+                    nombreFamiliaGlobal = data.nombre_familia || "Invitado";
+                    mesaGlobal = data.mesa || "";
+
+                    // --- BANDERAS ACTIVAS ---
+                    flagMostrarMesa = !!datosEvento.mostrar_mesa;
+                    flagPedirEdades = !!datosEvento.pedir_edades;
+                    flagPedirNombres = !!datosEvento.pedir_nombres;
+                    flagPedirMenu = !!datosEvento.pedir_menu;
+                    flagPedirCorreo = !!datosEvento.pedir_correo; 
+                    window.opcionesMenuEvento = datosEvento.opciones_menu || null;
+
+                    if (data.estado !== 'pendiente') {
+                        let txt = data.estado === 'confirmado' ? `Ya confirmaste asistencia para ${data.asistiran} persona(s).` : 'Ya has declinado esta invitación anteriormente.';
+                        btn.innerHTML = 'Acceder al Evento <i class="ph-bold ph-arrow-right"></i>'; btn.disabled = false;
+                        return mostrarMensajeFijo('Código Registrado', txt, 'ph-check-circle', 'text-brand', 'bg-brand-light');
+                    }
+
+                    maxPasesPermitidos = data.pases_asignados;
+
+                    document.getElementById('family-surname').textContent = data.nombre_familia || "Invitado";
+                    document.getElementById('guest-members').textContent = data.integrantes || "Familia y Amigos";
+                    document.getElementById('seats-display').innerHTML = `<i class="ph-fill ph-ticket text-lg"></i> ${maxPasesPermitidos} Pase${maxPasesPermitidos > 1 ? 's' : ''} Reservado${maxPasesPermitidos > 1 ? 's' : ''}`;
+                    if (data.integrantes) document.getElementById('nombre').value = data.integrantes;
+
+                    if (flagMostrarMesa && data.mesa) {
+                        document.getElementById('mesa-numero').textContent = data.mesa;
+                        document.getElementById('mesa-display').classList.remove('hidden');
+                    }
+
+                    countTotal = maxPasesPermitidos;
+                    document.getElementById('max-pases-txt').innerText = maxPasesPermitidos;
+                    document.getElementById('counter-total').innerText = countTotal;
+
+                    if (flagPedirEdades) {
+                        countAdultos = maxPasesPermitidos; countNinos = 0;
+                        document.getElementById('counter-adultos').innerText = countAdultos;
+                        document.getElementById('counter-ninos').innerText = countNinos;
+                        document.getElementById('desglose-edades').classList.remove('hidden');
+                    }
+
+                    irPaso(2);
+
+                } else { Swal.fire({ icon: 'error', title: 'Código no encontrado', text: 'Verifica que esté escrito correctamente.', confirmButtonColor: '#F43F5E' }); }
+            } catch (error) { console.error(error); Swal.fire({ icon: 'error', title: 'Error de conexión', confirmButtonColor: '#F43F5E' }); }
+            finally { btn.innerHTML = 'Acceder al Evento <i class="ph-bold ph-arrow-right"></i>'; btn.disabled = false; }
+        }
+
+        inputCodigo.addEventListener('keypress', function (e) { if (e.key === 'Enter') { e.preventDefault(); verificarCodigo(); } });
+
+        // --- PASO 2: RSVP ---
+        document.querySelectorAll('input[name="rsvp"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const container = document.getElementById('container-nombre-confirma');
+                if (e.target.value === 'si') {
+                    container.classList.remove('hidden');
+                    setTimeout(() => container.classList.remove('opacity-0'), 50);
+                } else {
+                    container.classList.add('opacity-0');
+                    setTimeout(() => container.classList.add('hidden'), 300);
+                }
+            });
+        });
+
+        window.siguientePaso = function () {
+            const rsvpSelected = document.querySelector('input[name="rsvp"]:checked');
+            const nombre = document.getElementById('nombre').value.trim();
+
+            if (!rsvpSelected) return Swal.fire({ text: 'Por favor selecciona si asistirás o no.', icon: 'warning', confirmButtonColor: '#F43F5E' });
+
+            if (rsvpSelected.value === 'no') { declinando = true; window.prepararPasoFinal(); }
+            else {
+                if (!nombre) return Swal.fire({ text: 'Por favor ingresa quién confirma.', icon: 'warning', confirmButtonColor: '#F43F5E' });
+                declinando = false; irPaso(3);
+            }
+        }
+
+        // --- PASO 3: CONTADORES ---
+        window.updateCounter = function (type, change) {
+            let newVal;
+            if (type === 'total') {
+                newVal = countTotal + change;
+                if (newVal >= 1 && newVal <= maxPasesPermitidos) {
+                    countTotal = newVal; document.getElementById('counter-total').innerText = countTotal;
+                    if (flagPedirEdades) {
+                        countAdultos = countTotal; countNinos = 0;
+                        document.getElementById('counter-adultos').innerText = countAdultos;
+                        document.getElementById('counter-ninos').innerText = countNinos;
+                    }
+                }
+            } else if (type === 'adultos' && flagPedirEdades) {
+                newVal = countAdultos + change;
+                if (newVal >= 0 && (newVal + countNinos) <= countTotal) { countAdultos = newVal; document.getElementById('counter-adultos').innerText = countAdultos; }
+            } else if (type === 'ninos' && flagPedirEdades) {
+                newVal = countNinos + change;
+                if (newVal >= 0 && (countAdultos + newVal) <= countTotal) { countNinos = newVal; document.getElementById('counter-ninos').innerText = countNinos; }
+            }
+        }
+
+        window.validarPaso3 = function () {
+            if (flagPedirEdades && ((countAdultos + countNinos) !== countTotal)) return Swal.fire({ text: `La suma debe ser igual al total (${countTotal}).`, icon: 'warning', confirmButtonColor: '#F43F5E' });
+
+            if (flagPedirNombres || flagPedirMenu) { generarTarjetasModernas(countTotal); irPaso(4); }
+            else { window.prepararPasoFinal(); }
+        }
+
+        // --- PASO 4: TARJETAS DINÁMICAS MODERNAS ---
+        function generarTarjetasModernas(total) {
+            const container = document.getElementById('asistentes-dinamicos-container');
+            if (container.children.length === total) return;
+
+            let html = '';
+            const ads = flagPedirEdades ? countAdultos : 0;
+            const nns = flagPedirEdades ? countNinos : 0;
+
+            const crearTarjeta = (titulo) => {
+                let tarjeta = `<div class="card-asistente">
+                    <div class="badge-asistente">${titulo}</div>`;
+
+                if (flagPedirNombres) {
+                    tarjeta += `<input type="text" placeholder="Escribe el nombre del asistente" class="input-nombre-asistente input-asistente-flat">`;
+                }
+
+                if (flagPedirMenu) {
+                    const menuConfig = {
+                        'Tradicional': { icon: 'ph-fork-knife', color: 'text-brand', label: 'Menú Tradicional' },
+                        'Vegetariano': { icon: 'ph-leaf', color: 'text-green-500', label: 'Menú Vegetariano' },
+                        'Vegano':      { icon: 'ph-plant', color: 'text-emerald-500', label: 'Menú Vegano' },
+                        'Infantil':    { icon: 'ph-baby', color: 'text-blue-400', label: 'Menú Infantil' }
+                    };
+                    const opciones = window.opcionesMenuEvento || ['Tradicional','Vegetariano','Vegano','Infantil'];
+                    const primeraOpcion = opciones[0] || 'Tradicional';
+                    const cfgPrimera = menuConfig[primeraOpcion] || menuConfig['Tradicional'];
+
+                    let opcionesHTML = '';
+                    opciones.forEach((op, idx) => {
+                        const cfg = menuConfig[op];
+                        if (!cfg) return;
+                        opcionesHTML += `<span class="custom-option${idx === 0 ? ' selected' : ''}" data-value="${op}"><i class="ph-fill ${cfg.icon} ${cfg.color} text-xl"></i> ${cfg.label}</span>`;
+                    });
+
+                    tarjeta += `
+                    <label class="text-text-muted mb-2 block">Selección de Menú</label>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select">
+                            <div class="custom-select__trigger">
+                                <span class="flex items-center gap-2 font-bold text-text-dark"><i class="ph-fill ${cfgPrimera.icon} text-brand text-xl"></i> ${cfgPrimera.label}</span>
+                                <i class="ph-bold ph-caret-down text-text-muted"></i>
+                            </div>
+                            <div class="custom-options">
+                                ${opcionesHTML}
+                            </div>
+                        </div>
+                        <input type="hidden" class="hidden-menu-input" value="${primeraOpcion}">
+                    </div>
+                    
+                    <label class="text-text-muted mb-2 mt-4 block">Alergias o Restricciones (Opcional)</label>
+                    <input type="text" placeholder="Ej. Alérgico a las nueces (Opcional)" class="input-alergias-asistente w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-brand transition-colors">`;
+                }
+                tarjeta += `</div>`;
+                return tarjeta;
+            }
+
+            if (flagPedirEdades) {
+                for (let i = 1; i <= ads; i++) html += crearTarjeta(`Adulto ${i}`);
+                for (let i = 1; i <= nns; i++) html += crearTarjeta(`Niño ${i}`);
+            } else {
+                for (let i = 1; i <= total; i++) html += crearTarjeta(`Invitado ${i}`);
+            }
+
+            container.innerHTML = html;
+            window.inicializarSelects();
+        }
+
+        // -- DATOS GLOBALES PARA PDF --
+        let ticketData = null;
+
+        // -- jsPDF BOLETO DOWNLOADER (PREMIUM) --
+        document.getElementById('btn-descargar-ticket').addEventListener('click', function () {
+            const btn = this;
+            const originTxt = btn.innerHTML;
+            btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-2xl"></i> Generando PDF...';
+            btn.disabled = true;
+
+            if (!ticketData) {
+                Swal.fire('Error', 'El ticket no esta disponible.', 'error');
+                btn.innerHTML = originTxt;
+                btn.disabled = false;
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const pw = 105;
+                let estimatedH = 220;
+                if (ticketData.asistentes && ticketData.asistentes.length > 0) {
+                    estimatedH += ticketData.asistentes.length * 16 + 30;
+                }
+                const doc = new jsPDF({ unit: 'mm', format: [pw, estimatedH] });
+                const cx = pw / 2;
+
+                // ── HELPER: Emoji a PNG via Canvas (con fuente de color) ──
+                function emojiImg(emoji, size) {
+                    const c = document.createElement('canvas');
+                    c.width = size; c.height = size;
+                    const ctx = c.getContext('2d');
+                    // Usar fuentes que soporten emojis a color en Windows y Mac
+                    ctx.font = size * 0.75 + 'px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(emoji, size / 2, size / 2 + 1);
+                    return c.toDataURL('image/png');
+                }
+
+                // Pre-generar emojis
+                const emojiMesa = emojiImg('\u{1FA91}', 80);
+                const emojiPases = emojiImg('\u{1F39F}\uFE0F', 80);
+                const emojiMenu = emojiImg('\u{1F37D}\uFE0F', 80);
+                const emojiTicket = emojiImg('\u{1F39F}\uFE0F', 96);
+                const emojiFiesta = emojiImg('\u{1F389}', 96);
+
+                // ── HELPER: Gradiente suave ──
+                function drawGrad(yS, h, r1, g1, b1, r2, g2, b2) {
+                    const steps = Math.ceil(h / 0.3);
+                    const sH = h / steps;
+                    for (let i = 0; i < steps; i++) {
+                        const t = i / steps;
+                        doc.setFillColor(
+                            Math.round(r1 + (r2 - r1) * t),
+                            Math.round(g1 + (g2 - g1) * t),
+                            Math.round(b1 + (b2 - b1) * t)
+                        );
+                        doc.rect(0, yS + i * sH, pw, sH + 0.1, 'F');
+                    }
+                }
+
+                // ── HELPER: Badge de color para menu ──
+                function drawMenuBadge(bx, by, menuText) {
+                    let bgR = 255, bgG = 245, bgB = 240;
+                    let txR = 194, txG = 65, txB = 12;
+                    if (menuText === 'Vegetariano') { bgR=240; bgG=253; bgB=244; txR=22; txG=163; txB=74; }
+                    if (menuText === 'Vegano') { bgR=236; bgG=253; bgB=245; txR=5; txG=150; txB=105; }
+                    if (menuText === 'Infantil') { bgR=239; bgG=246; bgB=255; txR=59; txG=130; txB=246; }
+
+                    doc.setFontSize(7);
+                    doc.setFont('helvetica', 'bold');
+                    const tw = doc.getTextWidth(menuText) + 5;
+                    const pillX = bx - tw;
+                    doc.setFillColor(bgR, bgG, bgB);
+                    doc.roundedRect(pillX, by - 3.2, tw, 5, 2, 2, 'F');
+                    doc.setTextColor(txR, txG, txB);
+                    doc.text(menuText, pillX + 2.5, by + 0.3);
+                    return tw;
+                }
+
+                // ════════════════════════════════
+                // FONDO
+                // ════════════════════════════════
+                doc.setFillColor(248, 250, 252);
+                doc.rect(0, 0, pw, estimatedH, 'F');
+
+                // ════════════════════════════════
+                // HEADER GRADIENTE
+                // ════════════════════════════════
+                const hH = 52;
+                drawGrad(0, hH, 252, 118, 67, 225, 29, 72);
+
+                doc.addImage(emojiTicket, 'PNG', cx - 4, 5, 8, 8);
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(18);
+                doc.text('Tu Ticket de Acceso', cx, 20, { align: 'center' });
+
+                doc.addImage(emojiFiesta, 'PNG', cx - 4, 22, 8, 8);
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.text('Presenta este pase al llegar a', cx, 36, { align: 'center' });
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(14);
+                doc.text(ticketData.evento, cx, 45, { align: 'center', maxWidth: pw - 24 });
+
+                // ════════════════════════════════
+                // TARJETA BLANCA PRINCIPAL
+                // ════════════════════════════════
+                const cY = hH + 5, cX = 6, cW = pw - 12;
+                doc.setFillColor(215, 220, 228);
+                doc.roundedRect(cX + 0.8, cY + 0.8, cW, estimatedH - hH - 15, 5, 5, 'F');
+                doc.setFillColor(255, 255, 255);
+                doc.roundedRect(cX, cY, cW, estimatedH - hH - 15, 5, 5, 'F');
+
+                // ════════════════════════════════
+                // CAJA INTERIOR (salmon + dashed)
+                // ════════════════════════════════
+                const bX = cX + 6, bY = cY + 6, bW = cW - 12;
+                let bH = 120;
+                if (ticketData.mesa) bH += 22;
+
+                doc.setFillColor(255, 245, 240);
+                doc.roundedRect(bX, bY, bW, bH, 4, 4, 'F');
+                doc.setDrawColor(253, 186, 116);
+                doc.setLineWidth(0.5);
+                doc.setLineDashPattern([2, 2], 0);
+                doc.roundedRect(bX, bY, bW, bH, 4, 4, 'S');
+                doc.setLineDashPattern([], 0);
+
+                // ── FAMILIA ──
+                let y = bY + 8;
+                doc.setTextColor(194, 65, 12);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text('FAMILIA / TITULAR', cx, y, { align: 'center' });
+                y += 7;
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(17);
+                doc.text(ticketData.familia, cx, y, { align: 'center', maxWidth: bW - 10 });
+                y += 14;
+
+                // ── MESA con emoji ──
+                if (ticketData.mesa) {
+                    doc.setTextColor(194, 65, 12);
+                    doc.setFontSize(7);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('MESA ASIGNADA', cx, y, { align: 'center' });
+                    y += 5;
+                    doc.addImage(emojiMesa, 'PNG', cx - 12, y - 1, 5, 5);
+                    doc.setTextColor(30, 41, 59);
+                    doc.setFontSize(18);
+                    doc.text(ticketData.mesa, cx + 1, y + 3, { align: 'center' });
+                    y += 14;
+                }
+
+                // ── PASES con emoji ──
+                doc.setTextColor(194, 65, 12);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PASES CONFIRMADOS', cx, y, { align: 'center' });
+                y += 7;
+                doc.addImage(emojiPases, 'PNG', cx - 14, y - 1, 6, 6);
+                doc.setTextColor(252, 118, 67);
+                doc.setFontSize(36);
+                doc.text(String(ticketData.pases), cx + 3, y + 5, { align: 'center' });
+                y += 16;
+
+                // ── QR DENTRO DE LA CAJA ──
+                const qrBoxW = 46, qrBoxH = 48;
+                const qrBoxX = cx - qrBoxW / 2;
+                doc.setFillColor(255, 255, 255);
+                doc.roundedRect(qrBoxX, y, qrBoxW, qrBoxH, 3, 3, 'F');
+
+                doc.setTextColor(100, 116, 139);
+                doc.setFontSize(5.5);
+                doc.setFont('helvetica', 'bold');
+                doc.text('MUESTRA EL QR AL LLEGAR', cx, y + 5, { align: 'center' });
+
+                const qrCanvas = document.createElement('canvas');
+                new QRious({ element: qrCanvas, value: ticketData.codigo, size: 400, level: 'M' });
+                const qrDataUrl = qrCanvas.toDataURL('image/png');
+                doc.addImage(qrDataUrl, 'PNG', cx - 13, y + 7, 26, 26);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(9);
+                doc.setFont('courier', 'bold');
+                doc.text(ticketData.codigo, cx, y + qrBoxH - 4, { align: 'center' });
+                y += qrBoxH + 14;
+
+                // ════════════════════════════════
+                // LISTA DE INVITADOS
+                // ════════════════════════════════
+                if (ticketData.asistentes && ticketData.asistentes.length > 0) {
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.3);
+                    doc.setLineDashPattern([2, 2], 0);
+                    doc.line(cX + 10, y, cX + cW - 10, y);
+                    doc.setLineDashPattern([], 0);
+                    y += 10;
+
+                    doc.setTextColor(30, 41, 59);
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('DESGLOSE DE ASISTENTES', cx, y, { align: 'center' });
+                    y += 10;
+
+                    ticketData.asistentes.forEach((asistente, idx) => {
+                        const nombre = asistente.nombre || ('Invitado ' + (idx + 1));
+
+                        doc.setFillColor(idx % 2 === 0 ? 248 : 241, idx % 2 === 0 ? 250 : 245, idx % 2 === 0 ? 252 : 249);
+                        doc.roundedRect(cX + 4, y - 3.5, cW - 8, 13, 2, 2, 'F');
+
+                        // Avatar
+                        doc.setFillColor(241, 245, 249);
+                        doc.circle(cX + 9, y + 2.5, 3, 'F');
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFontSize(6);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(String(idx + 1), cX + 9, y + 3.5, { align: 'center' });
+
+                        // Nombre
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFontSize(9);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(nombre, cX + 15, y + 3);
+
+                        // Menu badge + emoji
+                        if (asistente.menu) {
+                            const badgeW = drawMenuBadge(cX + cW - 6, y + 3, asistente.menu);
+                            doc.addImage(emojiMenu, 'PNG', cX + cW - 7 - badgeW - 3, y - 0.2, 4, 4);
+                        }
+
+                        y += 14;
+                    });
+                }
+
+                y += 6;
+
+                // ════════════════════════════════
+                // PIE
+                // ════════════════════════════════
+                doc.setDrawColor(226, 232, 240);
+                doc.setLineWidth(0.3);
+                doc.setLineDashPattern([2, 2], 0);
+                doc.line(cX + 10, y, cX + cW - 10, y);
+                doc.setLineDashPattern([], 0);
+
+                doc.setTextColor(148, 163, 184);
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Guarda este PDF y presentalo en la entrada del evento.', cx, y + 6, { align: 'center', maxWidth: pw - 30 });
+
+                doc.save(`Ticket_${ticketData.familia.replace(/\\s+/g, '_')}.pdf`);
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+            } finally {
+                btn.innerHTML = originTxt;
+                btn.disabled = false;
+            }
+        });
+
+        window.validarPaso4 = function () {
+            if (flagPedirNombres) {
+                let incompleto = false;
+                document.querySelectorAll('.input-nombre-asistente').forEach(inp => { if (inp.value.trim() === '') incompleto = true; });
+                if (incompleto) return Swal.fire({ text: 'Por favor escribe el nombre de todos los invitados.', icon: 'warning', confirmButtonColor: '#F43F5E' });
+            }
+            window.prepararPasoFinal();
+        }
+
+
+        window.retrocederDesdeFinal = function () {
+            if (declinando) irPaso(2);
+            else if (flagPedirNombres || flagPedirMenu) irPaso(4);
+            else irPaso(3);
+        }
+        // --- PREPARAR LA VISTA FINAL DINÁMICA ---
+        window.prepararPasoFinal = function () {
+            const contenedorInput = document.getElementById('contenedor-input-final');
+            const titulo = document.getElementById('titulo-final');
+            const texto = document.getElementById('texto-final');
+            const iconoBg = document.getElementById('icono-final-bg');
+            const icono = document.getElementById('icono-final');
+            const ping = document.getElementById('ping-final');
+
+            if (declinando) {
+                // 1. MODO: Declinó invitación
+                contenedorInput.style.display = 'none';
+                titulo.innerText = '¿Estás seguro?';
+                texto.innerText = 'Lamentamos mucho que no puedas acompañarnos. Haz clic en enviar para confirmar tu respuesta.';
+                iconoBg.className = 'w-24 h-24 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-8 text-slate-500 shadow-sm relative transition-colors duration-500';
+                icono.className = 'ph-fill ph-hand-waving text-5xl relative z-10 transition-all';
+                ping.classList.add('hidden');
+            } else if (flagPedirCorreo) {
+                // 2. MODO: Confirmó Y cliente contrató QR/Correo
+                contenedorInput.style.display = 'block';
+                titulo.innerText = 'Tu Ticket Digital';
+                texto.innerText = 'Déjanos tu correo electrónico para enviarte tu pase de acceso con código QR y la ubicación.';
+                iconoBg.className = 'w-24 h-24 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-8 text-blue-500 shadow-sm relative transition-colors duration-500';
+                icono.className = 'ph-fill ph-envelope-simple text-5xl relative z-10 transition-all';
+                ping.classList.remove('hidden');
+            } else {
+                // 3. MODO: Confirmó PERO cliente no quiere pedir correo
+                contenedorInput.style.display = 'none';
+                titulo.innerText = '¡Casi listo!';
+                texto.innerText = 'Haz clic en el botón de abajo para enviar tu confirmación de asistencia.';
+                iconoBg.className = 'w-24 h-24 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-8 text-green-500 shadow-sm relative transition-colors duration-500';
+                icono.className = 'ph-fill ph-check-circle text-5xl relative z-10 transition-all';
+                ping.classList.add('hidden');
+            }
+            irPaso(5);
+        }
+        // --- ENVÍO FINAL ---
+        document.getElementById('formulario').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!docRefActual) return;
+
+            const btnSubmit = document.getElementById('btn-submit');
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-xl"></i> Procesando...'; btnSubmit.disabled = true;
+
+            try {
+                // Extraemos el correo solo si confirmó y la bandera está activa
+                const correoIngresado = (!declinando && flagPedirCorreo) ? document.getElementById('correo-invitado').value.trim().toLowerCase() : '';
+                const datosActualizar = {
+                    estado: declinando ? "declinado" : "confirmado",
+                    asistiran: declinando ? 0 : countTotal,
+                    quien_confirma: document.getElementById('nombre').value.trim(),
+                    email_invitado: correoIngresado, // Guardamos el correo en lugar del WA
+                    fecha_confirmacion: serverTimestamp()
+                };
+
+                let detallesExtraParaCorreo = { flagEdades: flagPedirEdades, adultos: countAdultos, ninos: countNinos, asistentes: [] };
+
+                if (!declinando) {
+                    if (flagPedirEdades) { datosActualizar.adultos = countAdultos; datosActualizar.ninos = countNinos; }
+                    if (flagPedirNombres || flagPedirMenu) {
+                        let detalles = [];
+                        document.querySelectorAll('.card-asistente').forEach(bloque => {
+                            let info = {};
+                            if (flagPedirNombres) info.nombre = bloque.querySelector('.input-nombre-asistente').value.trim();
+                            if (flagPedirMenu) {
+                                info.menu = bloque.querySelector('.hidden-menu-input').value;
+                                info.alergias = bloque.querySelector('.input-alergias-asistente').value.trim();
+                            }
+                            detalles.push(info);
+                        });
+                        datosActualizar.detalles_asistentes = detalles;
+                        detallesExtraParaCorreo.asistentes = detalles;
+                        if (flagPedirNombres) datosActualizar.nombres_asistentes = detalles.map(a => a.nombre).join(', ');
+                    }
+                }
+
+                // 1. GUARDAMOS EN BASE DE DATOS
+                await updateDoc(docRefActual, datosActualizar);
+
+                // 2. DISPARAMOS EL CORREO INTELIGENTE (AL INVITADO Y AL ORGANIZADOR)
+                const codigoBoleto = inputCodigo.value.toUpperCase().trim();
+                window.enviarNotificacionDinamica(
+                    correoIngresado,          // Correo del invitado (Para su ticket)
+                    emailOrganizadorGlobal,   // Correo del creador del evento
+                    nombreFamiliaGlobal,
+                    declinando ? 0 : countTotal,
+                    nombreEventoGlobal,
+                    declinando,
+                    detallesExtraParaCorreo,
+                    codigoBoleto,             // Pasamos el código para generar el QR
+                    mesaGlobal
+                );
+
+                // 3. MOSTRAMOS EL MENSAJE DE ÉXITO AL INVITADO
+                mostrarMensajeFijo('¡Gracias!', declinando ? 'Hemos registrado tu respuesta. Lamentamos que no puedas asistir.' : 'Tu asistencia ha sido confirmada con éxito.', 'ph-confetti', 'text-brand', 'bg-brand-light', !declinando);
+
+            } catch (error) {
+                console.error(error); Swal.fire('Error', 'Hubo un problema. Intenta nuevamente.', 'error');
+                btnSubmit.innerHTML = originalText; btnSubmit.disabled = false;
+            }
+        });
+
+        // --- EL CEREBRO DE CORREOS (DISEÑO PREMIUM UNIFICADO) ---
+        window.enviarNotificacionDinamica = async function (emailInvitado, emailOrganizador, familia, pases, evento, esDeclinado, detallesExtra, codigoBoleto, mesaAsignada = "") {
+
+            // --- 1. PREPARAR ELEMENTOS COMPARTIDOS (EDADES Y ASISTENTES) ---
+            let tablaEdadesHTML = "";
+            if (detallesExtra.flagEdades && !esDeclinado) {
+                tablaEdadesHTML = `
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid #E2E8F0; margin-top: 20px;">
+                        <tr>
+                            <td width="50%" align="center" style="padding: 12px; border-right: 1px solid #E2E8F0;">
+                                <span style="font-size: 11px; color: #64748B; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; display: block; margin-bottom: 4px;">Adultos</span>
+                                <span style="font-size: 18px; font-weight: 800; color: #1E293B;">🧑 ${detallesExtra.adultos}</span>
+                            </td>
+                            <td width="50%" align="center" style="padding: 12px;">
+                                <span style="font-size: 11px; color: #64748B; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; display: block; margin-bottom: 4px;">Niños</span>
+                                <span style="font-size: 18px; font-weight: 800; color: #1E293B;">🧸 ${detallesExtra.ninos}</span>
+                            </td>
+                        </tr>
+                    </table>`;
+            }
+
+            let listaInvitadosHTML = "";
+            if (!esDeclinado && detallesExtra.asistentes && detallesExtra.asistentes.length > 0) {
+                listaInvitadosHTML += `<div style="margin-top: 10px;">
+                    <h4 style="margin: 0 0 20px 0; color: #1E293B; font-size: 15px; font-weight: 800; border-bottom: 2px solid #F1F5F9; padding-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">Desglose de Asistentes</h4>`;
+
+                detallesExtra.asistentes.forEach((asistente, idx) => {
+                    let nombreMostrado = asistente.nombre || `Invitado ${idx + 1}`;
+                    let etiquetasExtras = "";
+                    if (asistente.menu) {
+                        let emojiMenu = "🍽️";
+                        if (asistente.menu === "Vegetariano") emojiMenu = "🥗";
+                        if (asistente.menu === "Vegano") emojiMenu = "🌱";
+                        if (asistente.menu === "Infantil") emojiMenu = "🍟";
+                        etiquetasExtras += `<div style="display: inline-block; background: #FFF5F0; border: 1px solid #FFEDD5; color: #C2410C; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-top: 10px; margin-right: 8px;">${emojiMenu} ${asistente.menu}</div>`;
+                    }
+                    if (asistente.alergias) {
+                        etiquetasExtras += `<div style="display: inline-block; background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-top: 10px;">⚠️ ${asistente.alergias}</div>`;
+                    }
+
+                    listaInvitadosHTML += `
+                        <div style="background: white; border: 1px solid #E2E8F0; padding: 18px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td width="50" valign="top"><div style="background: #F1F5F9; width: 40px; height: 40px; border-radius: 12px; text-align: center; line-height: 40px; font-size: 20px;">👤</div></td>
+                                    <td valign="middle"><p style="margin: 0; font-size: 16px; font-weight: 800; color: #1E293B;">${nombreMostrado}</p>${etiquetasExtras}</td>
+                                </tr>
+                            </table>
+                        </div>`;
+                });
+                listaInvitadosHTML += `</div>`;
+            }
+
+                        // --- PALETA DE COLORES GLOBAL ---
+            let colorPrimario = esDeclinado ? "#E11D48" : "#FC7643";
+            let colorGradiente = esDeclinado ? "linear-gradient(135deg, #F43F5E 0%, #BE123C 100%)" : "linear-gradient(135deg, #FC7643 0%, #E11D48 100%)";
+            let bgContenedor = esDeclinado ? "#FFF1F2" : "#FFF5F0";
+            let bordeContenedor = esDeclinado ? "#FDA4AF" : "#FDBA74";
+            let textoContenedor = esDeclinado ? "#BE123C" : "#C2410C";
+
+            let bloqueMesaMail = "";
+            if (flagMostrarMesa && mesaAsignada) {
+                bloqueMesaMail = `<p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Mesa Asignada</p><h3 style="margin: 0 0 20px 0; color: #1E293B; font-size: 26px; font-weight: 900;">🪑 ${mesaAsignada}</h3>`;
+            }
+
+            // -------------------------------------------------------------
+            // CORREO 1: NOTIFICACIÓN PARA EL ORGANIZADOR (Idéntico a tu captura)
+            // -------------------------------------------------------------
+            if (emailOrganizador) {
+                let tituloOrg = esDeclinado ? "¡Invitación Declinada!" : "¡Nueva Confirmación!";
+                let iconoOrg = esDeclinado ? "😔" : "🎉";
+
+                let htmlOrganizador = `
+                    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F8FAFC; padding: 30px 15px;">
+                        <div style="background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); border: 1px solid #E2E8F0;">
+                            
+                            <div style="background: ${colorGradiente}; padding: 45px 20px; text-align: center;">
+                                <h2 style="color: white; margin: 0; font-size: 25px; font-weight: 800;">${tituloOrg}</h2>
+                                <div style="font-size: 32px; margin: 12px 0;">${iconoOrg}</div>
+                                <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 15px;">Actualización para<br><b style="font-size: 20px; display: inline-block; margin-top: 8px; color: white;">${evento}</b></p>
+                            </div>
+
+                            <div style="padding: 30px;">
+                                <div style="background: ${bgContenedor}; border: 2px dashed ${bordeContenedor}; border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
+                                    <p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Familia / Titular</p>
+                                    <h3 style="margin: 0 0 20px 0; color: #1E293B; font-size: 26px; font-weight: 900;">${familia}</h3>
+                                    
+                                    ${bloqueMesaMail}
+                                    <p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Pases Confirmados</p>
+                                    <div style="font-size: 48px; font-weight: 900; color: ${colorPrimario}; line-height: 1; margin-bottom: 10px;">🎟️ ${pases}</div>
+                                    
+                                    ${tablaEdadesHTML}
+                                </div>
+                                
+                                ${listaInvitadosHTML}
+                                
+                                <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid #F1F5F9;">
+                                    <a href="https://eventoclic.com/dashboard" style="display: inline-block; background: ${colorGradiente}; color: white; text-decoration: none; padding: 15px 32px; border-radius: 14px; font-weight: bold; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 8px 20px rgba(252, 118, 67, 0.25);">Ir a mi Panel de Control</a>
+                                    <p style="color: #94A3B8; font-size: 12px; margin-top: 25px;">Este es un mensaje automático de tu sistema Eventoclic.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                try {
+                    await addDoc(collection(db, "correos_salientes"), {
+                        to: emailOrganizador,
+                        message: { subject: `🔔 ${esDeclinado ? 'Declinación' : 'Confirmación'}: ${familia}`, html: htmlOrganizador }
+                    });
+                } catch (e) { console.error("Error correo org:", e); }
+            }
+
+            // -------------------------------------------------------------
+            // CORREO 2: TICKET QR PARA EL INVITADO
+            // -------------------------------------------------------------
+            if (emailInvitado && !esDeclinado) {
+                let urlQR = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${codigoBoleto}&color=0F172A&bgcolor=FFFFFF`;
+
+                let htmlInvitado = `
+                    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F8FAFC; padding: 30px 15px;">
+                        <div style="background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); border: 1px solid #E2E8F0;">
+                            
+                            <div style="background: ${colorGradiente}; padding: 45px 20px; text-align: center;">
+                                <div style="font-size: 32px; margin-bottom: 10px;">🎟️</div>
+                                <h2 style="color: white; margin: 0; font-size: 25px; font-weight: 800;">Tu Ticket de Acceso</h2>
+                                <div style="font-size: 32px; margin: 10px 0;">🎉</div>
+                                <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 15px;">Presenta este correo al llegar a<br><b style="font-size: 20px; display: inline-block; margin-top: 8px; color: white;">${evento}</b></p>
+                            </div>
+
+                            <div style="padding: 30px;">
+                                <div style="background: ${bgContenedor}; border: 2px dashed ${bordeContenedor}; border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
+                                    <p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Familia / Titular</p>
+                                    <h3 style="margin: 0 0 20px 0; color: #1E293B; font-size: 26px; font-weight: 900;">${familia}</h3>
+                                    
+                                    ${bloqueMesaMail}
+                                    <p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Pases Confirmados</p>
+                                    <div style="font-size: 48px; font-weight: 900; color: ${colorPrimario}; line-height: 1; margin-bottom: 25px;">🎟️ ${pases}</div>
+                                    
+                                    <div style="background: white; border-radius: 16px; padding: 20px; display: inline-block; max-width: 100%; box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 10px;">
+                                        <p style="margin: 0 0 10px 0; color: #64748B; font-size: 11px; font-weight: bold; text-transform: uppercase;">Muéstralo al llegar</p>
+                                        <img src="${urlQR}" alt="QR" style="width: 140px; height: 140px; display: block; margin: 0 auto;">
+                                        <p style="margin: 15px 0 0 0; font-family: monospace; font-size: 20px; font-weight: bold; color: #1E293B; letter-spacing: 3px;">${codigoBoleto}</p>
+                                    </div>
+                                    ${tablaEdadesHTML}
+                                </div>
+                                ${listaInvitadosHTML}
+                                <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid #F1F5F9;">
+                                    <p style="color: #64748B; font-size: 14px; margin-bottom: 20px;">Por favor guarda este correo o tómale una captura de pantalla a tu código QR.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                // Guardar datos para descarga PDF
+                if (!esDeclinado) {
+                    ticketData = { evento, familia, mesa: mesaAsignada, pases, codigo: codigoBoleto, asistentes: detallesExtra.asistentes || [] };
+                }
+
+                  try {
+                      await addDoc(collection(db, "correos_salientes"), {
+                          to: emailInvitado,
+                        message: { subject: `🎫 Tu Ticket de Acceso: ${evento}`, html: htmlInvitado }
+                    });
+                } catch (e) { console.error("Error correo inv:", e); }
+            }
+        }
+    </script>
+</body>
+
+</html>

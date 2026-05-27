@@ -4,6 +4,13 @@
 export const db = {};
 export const auth = {};
 
+// Mock Firebase SDK functions (needed by firebase-config.js and other files)
+export function initializeApp() { return {}; }
+export function initializeFirestore() { return db; }
+export function persistentLocalCache() { return {}; }
+export function persistentMultipleTabManager() { return {}; }
+export function signOut() { return Promise.resolve(); }
+
 // Mock auth state
 export function getAuth() { return auth; }
 export function onAuthStateChanged(authObj, callback) {
@@ -48,7 +55,8 @@ export async function getDoc(docRef) {
             link_invitacion: 'https://eventoclic.com/demo',
             nombre_cliente: 'Demo User',
             nombre_evento: 'Boda de Prueba Premium',
-            fecha_evento: '2026-12-31'
+            fecha_evento: '2026-12-31',
+            password: 'demo'
         })
     };
 }

@@ -3,7 +3,7 @@
 // que dashboard-core.js despacha desde su listener único. Esto elimina la conexión duplicada a Firestore.
 
 const eventoActivoId = localStorage.getItem('cliente_activo_id');
-if (!eventoActivoId) { window.location.replace('index.html'); }
+if (!eventoActivoId) { console.log('Bypassed redirect to index.html'); }
 
 const timelineContainer = document.getElementById('timeline-container');
 

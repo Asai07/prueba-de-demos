@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Confirmación de Invitados</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/output.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 25px 50px -12px rgba(211, 93, 71, 0.15);
+        }
+
+        .btn-count {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #F8FAFC;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: 1px solid #E2E8F0;
+        }
+
+        .btn-count:hover {
+            background: #FFF5F0;
+            color: #D35D47;
+            border-color: #FDBA74;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(211, 93, 71, 0.15);
+        }
+
+        .radio-option input {
+            display: none;
+        }
+
+        .radio-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 2px solid #F1F5F9;
+            padding: 20px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            color: #64748B;
+        }
+
+        .radio-option input:checked+label {
+            border-color: #D35D47;
+            background-color: #FFF8F5;
+            color: #D35D47;
+            box-shadow: 0 10px 15px -3px rgba(211, 93, 71, 0.1);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4 font-sans text-primario">
+
+    <div
+        class="glass-card w-full max-w-md rounded-[2.5rem] p-8 sm:p-10 relative overflow-hidden transition-all duration-700 ease-in-out">
+
+        <div class="absolute top-0 left-0 w-full h-2.5 bg-gradient-to-r from-brand to-brandLight opacity-90"></div>
+
+        <div class="text-center mb-10">
+            <h1
+                class="font-title text-4xl sm:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-brand-dark to-brand-accent mb-3 tracking-tight">
+                Confirma tu Asistencia</h1>
+            <p class="text-secundario text-sm sm:text-base font-medium">Ingresa el código maestro de tu invitación</p>
+        </div>
+
+        <form id="formulario" class="space-y-7">
+
+            <div class="group">
+                <label class="block text-[11px] font-extrabold text-secundario uppercase tracking-widest mb-2.5">Código
+                    Único</label>
+                <div class="relative transition-transform duration-300 group-focus-within:-translate-y-1">
+                    <i
+                        class="ph-bold ph-ticket absolute left-4 top-1/2 -translate-y-1/2 text-secundario/60 text-xl group-focus-within:text-brand transition-colors"></i>
+                    <input type="text" id="codigo-invitado" placeholder="Ej. KYA-124" autocomplete="off" required
+                        class="w-full pl-12 pr-4 py-3.5 bg-white/80 backdrop-blur-sm border-2 border-slate-100 rounded-2xl font-black text-primario tracking-widest uppercase focus:outline-none focus:border-brand/40 focus:bg-white focus:ring-4 focus:ring-brand/10 transition-all shadow-sm">
+                </div>
+                <p id="mensaje-buscando"
+                    class="text-sm text-brand font-bold mt-3 hidden animate-pulse flex items-center gap-2 justify-center">
+                    <i class="ph-bold ph-spinner animate-spin text-lg"></i> Buscando evento...
+                </p>
+                <p id="mensaje-error"
+                    class="text-sm text-red-500 font-bold mt-3 hidden flex items-center gap-2 justify-center"><i
+                        class="ph-fill ph-warning-circle text-lg"></i> Código no válido o no existe.</p>
+            </div>
+
+            <div id="resto-formulario" class="hidden space-y-7 animate-fade-in-up">
+
+                <div
+                    class="bg-gradient-to-br from-brand/5 to-brandLight/5 border border-brand/20 rounded-3xl p-5 text-center shadow-inner relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-brand/10 rounded-full blur-xl"></div>
+                    <div class="absolute -left-4 -bottom-4 w-16 h-16 bg-brandLight/10 rounded-full blur-xl"></div>
+                    <p class="text-sm text-secundario font-bold uppercase tracking-wider relative z-10">Pases Asignados
+                    </p>
+                    <p id="seats-count"
+                        class="font-title text-4xl font-extrabold text-brand mt-1 relative z-10 drop-shadow-sm">0</p>
+                </div>
+
+                <div class="group mx-auto max-w-sm">
+                    <label
+                        class="block text-[11px] font-extrabold text-secundario uppercase tracking-widest mb-2.5">¿Quién
+                        Confirma?</label>
+                    <div class="relative transition-transform duration-300 group-focus-within:-translate-y-1">
+                        <i
+                            class="ph-bold ph-user-focus absolute left-4 top-1/2 -translate-y-1/2 text-secundario/60 text-xl group-focus-within:text-brand transition-colors"></i>
+                        <input type="text" id="nombre" placeholder="Nombre completo o Familia" required
+                            class="w-full pl-12 pr-4 py-3.5 bg-white/80 backdrop-blur-sm border-2 border-slate-100 rounded-2xl font-bold text-primario focus:outline-none focus:border-brand/40 focus:bg-white focus:ring-4 focus:ring-brand/10 transition-all shadow-sm">
+                    </div>
+                </div>
+
+                <div class="group mx-auto max-w-sm">
+                    <label
+                        class="block text-[11px] font-extrabold text-secundario uppercase tracking-widest mb-3 text-center">¿Asistirán
+                        al evento?</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="radio-option">
+                            <input type="radio" name="rsvp" id="rsvp-si" value="si" required>
+                            <label for="rsvp-si" class="hover:bg-brand/5 active:scale-95"><i
+                                    class="ph-fill ph-confetti text-3xl text-brandLight mb-1"></i> Sí,
+                                asistiremos</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="rsvp" id="rsvp-no" value="no">
+                            <label for="rsvp-no" class="hover:bg-slate-50 active:scale-95"><i
+                                    class="ph-fill ph-hand-waving text-3xl text-slate-300 mb-1"></i> No podremos</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="seccion-contadores" class="hidden space-y-4 pt-6 border-t border-slate-100/50">
+
+                    <div
+                        class="flex items-center justify-between bg-white/60 backdrop-blur-sm border-2 border-slate-50 p-4 rounded-2xl shadow-sm transition-all hover:border-brand/20 hover:shadow-md">
+                        <div>
+                            <p class="font-extrabold text-primario text-sm">Total a usar</p>
+                            <p class="text-[11px] font-bold text-secundario uppercase tracking-widest mt-0.5">Pases
+                                confirmados</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button type="button" class="btn-count" onclick="modificarContador('total', -1)"><i
+                                    class="ph-bold ph-minus"></i></button>
+                            <span id="counter-total"
+                                class="font-title font-black text-2xl w-8 text-center text-brand">1</span>
+                            <button type="button" class="btn-count" onclick="modificarContador('total', 1)"><i
+                                    class="ph-bold ph-plus"></i></button>
+                        </div>
+                    </div>
+
+                    <div id="desglose-edades"
+                        class="hidden space-y-3 bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+                        <label
+                            class="block text-[10px] font-extrabold text-brand uppercase tracking-widest text-center mb-4">Desglose
+                            por edades</label>
+
+                        <div
+                            class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                            <p class="font-bold text-primario flex items-center gap-2 text-sm"><i
+                                    class="ph-fill ph-user text-secundario text-lg"></i> Adultos</p>
+                            <div class="flex items-center gap-3">
+                                <button type="button" class="btn-count w-8 h-8 text-sm"
+                                    onclick="modificarContador('adultos', -1)"><i class="ph-bold ph-minus"></i></button>
+                                <span id="counter-adultos" class="font-bold text-lg w-6 text-center">1</span>
+                                <button type="button" class="btn-count w-8 h-8 text-sm"
+                                    onclick="modificarContador('adultos', 1)"><i class="ph-bold ph-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex items-center justify-between bg-white p-3 rounded-xl shadow-sm border border-slate-100">
+                            <p class="font-bold text-primario flex items-center gap-2 text-sm"><i
+                                    class="ph-fill ph-baby text-secundario text-lg"></i> Niños</p>
+                            <div class="flex items-center gap-3">
+                                <button type="button" class="btn-count w-8 h-8 text-sm"
+                                    onclick="modificarContador('ninos', -1)"><i class="ph-bold ph-minus"></i></button>
+                                <span id="counter-ninos" class="font-bold text-lg w-6 text-center">0</span>
+                                <button type="button" class="btn-count w-8 h-8 text-sm"
+                                    onclick="modificarContador('ninos', 1)"><i class="ph-bold ph-plus"></i></button>
+                            </div>
+                        </div>
+
+                        <p id="error-edades"
+                            class="text-xs font-bold text-red-500 text-center hidden animate-pulse bg-red-50 text-red-600 p-2 rounded-lg border border-red-100 mt-2">
+                            ⚠️
+                            La suma de adultos y niños sumados debe ser igual al total a usar.</p>
+                    </div>
+
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="btn-submit"
+                        class="w-full bg-gradient-to-r from-brand to-brand-accent hover:from-brand-dark hover:to-brand text-white font-extrabold py-5 rounded-2xl shadow-[0_10px_20px_-10px_rgba(252,118,67,0.6)] hover:shadow-[0_15px_25px_-10px_rgba(252,118,67,0.8)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-base ring-4 ring-transparent focus:outline-none focus:ring-brand/20">
+                        Enviar Confirmación <i class="ph-bold ph-paper-plane-tilt text-xl animate-bounce"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script type="module">
+        import { db } from '../js/firebase-config.js';
+        import { collection, addDoc, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Variables Globales
+        let pasesMaximos = 0;
+        let eventoIdDelCodigo = null;
+        let pedirEdadesFlag = false;
+        let eventoDocsRef = null;
+        let countTotal = 1; let countAdultos = 1; let countNinos = 0;
+
+        // UI Elements
+        const inputCodigo = document.getElementById('codigo-invitado');
+        const msgError = document.getElementById('mensaje-error');
+        const restoFormulario = document.getElementById('resto-formulario');
+        const msgBuscando = document.getElementById('mensaje-buscando');
+
+        // BÚSQUEDA DE CÓDIGO (Debounce simplificado)
+        let timeoutBusqueda;
+        inputCodigo.addEventListener('input', function () {
+            clearTimeout(timeoutBusqueda);
+            const codigo = this.value.toUpperCase().trim();
+
+            restoFormulario.classList.add('hidden');
+            msgError.classList.add('hidden');
+
+            if (codigo.length >= 7) {
+                msgBuscando.classList.remove('hidden');
+
+                timeoutBusqueda = setTimeout(async () => {
+                    try {
+                        const docSnap = await getDoc(doc(db, "invitados", codigo));
+
+                        if (docSnap.exists() && docSnap.data().is_master) {
+                            const data = docSnap.data();
+                            pasesMaximos = data.pases_asignados || 1;
+                            eventoIdDelCodigo = data.evento_id;
+
+                            // Revisamos la bandera del evento
+                            const eventoSnap = await getDoc(doc(db, "eventos", eventoIdDelCodigo));
+                            if (eventoSnap.exists()) {
+                                eventoDocsRef = eventoSnap.data();
+                                pedirEdadesFlag = eventoDocsRef.pedir_edades === true;
+                            } else {
+                                pedirEdadesFlag = false;
+                            }
+
+                            // Preparamos UI
+                            document.getElementById('seats-count').textContent = `${pasesMaximos} acceso${pasesMaximos > 1 ? 's' : ''}`;
+                            countTotal = pasesMaximos;
+                            countAdultos = pasesMaximos;
+                            countNinos = 0;
+                            actualizarTextosContadores();
+
+                            msgBuscando.classList.add('hidden');
+                            restoFormulario.classList.remove('hidden');
+
+                        } else {
+                            msgBuscando.classList.add('hidden');
+                            msgError.classList.remove('hidden');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        msgBuscando.classList.add('hidden');
+                        msgError.textContent = "Error de conexión.";
+                        msgError.classList.remove('hidden');
+                    }
+                }, 800);
+            }
+        });
+
+        // LÓGICA DE MOSTRAR CONTADORES
+        document.querySelectorAll('input[name="rsvp"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                const vaAsistir = e.target.value === 'si';
+                const seccionContadores = document.getElementById('seccion-contadores');
+                const desgloseEdades = document.getElementById('desglose-edades');
+
+                if (vaAsistir) {
+                    seccionContadores.classList.remove('hidden');
+                    if (pedirEdadesFlag) desgloseEdades.classList.remove('hidden');
+                } else {
+                    seccionContadores.classList.add('hidden');
+                }
+            });
+        });
+
+        // LÓGICA DE MATEMÁTICAS DE LOS CONTADORES
+        window.modificarContador = function (tipo, cambio) {
+            if (tipo === 'total') {
+                let nuevo = countTotal + cambio;
+                if (nuevo >= 1 && nuevo <= pasesMaximos) {
+                    countTotal = nuevo;
+                    if (pedirEdadesFlag) { countAdultos = countTotal; countNinos = 0; } // Reseteo automático
+                }
+            } else if (tipo === 'adultos' && pedirEdadesFlag) {
+                let nuevo = countAdultos + cambio;
+                if (nuevo >= 0 && (nuevo + countNinos) <= countTotal) countAdultos = nuevo;
+            } else if (tipo === 'ninos' && pedirEdadesFlag) {
+                let nuevo = countNinos + cambio;
+                if (nuevo >= 0 && (countAdultos + nuevo) <= countTotal) countNinos = nuevo;
+            }
+            actualizarTextosContadores();
+        }
+
+        function actualizarTextosContadores() {
+            document.getElementById('counter-total').innerText = countTotal;
+            document.getElementById('counter-adultos').innerText = countAdultos;
+            document.getElementById('counter-ninos').innerText = countNinos;
+            document.getElementById('error-edades').classList.add('hidden');
+        }
+
+        // ENVÍO A FIREBASE
+        document.getElementById('formulario').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const rsvpSeleccionado = document.querySelector('input[name="rsvp"]:checked');
+            if (!rsvpSeleccionado) return Swal.fire('Atención', 'Selecciona si asistirás o no.', 'warning');
+
+            const asistira = rsvpSeleccionado.value === 'si';
+            const nombreEscrito = document.getElementById('nombre').value.trim();
+
+            // Validación estricta de matemáticas si piden edades
+            if (asistira && pedirEdadesFlag) {
+                if ((countAdultos + countNinos) !== countTotal) {
+                    document.getElementById('error-edades').classList.remove('hidden');
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('btn-submit');
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Procesando...';
+
+            try {
+                const mailOrganizador = eventoDocsRef && eventoDocsRef.email ? eventoDocsRef.email : null;
+
+                const datosParaGuardar = {
+                    evento_id: eventoIdDelCodigo,
+                    codigo_origen: inputCodigo.value.toUpperCase(),
+                    nombre_familia: nombreEscrito,
+                    asistiran: asistira ? countTotal : 0,
+                    pases_asignados: asistira ? countTotal : 0,
+                    estado: asistira ? "confirmado" : "declinado",
+                    quien_confirma: nombreEscrito,
+                    fecha_confirmacion: serverTimestamp()
+                };
+
+                if (pedirEdadesFlag && asistira) {
+                    datosParaGuardar.adultos = countAdultos;
+                    datosParaGuardar.ninos = countNinos;
+                }
+
+                await addDoc(collection(db, "invitados"), datosParaGuardar);
+
+                // --- SISTEMA DE CORREOS AUTOMÁTICOS AL ORGANIZADOR ---
+                if (mailOrganizador) {
+                    notificarOrganizador(mailOrganizador, eventoDocsRef.nombre_evento, nombreEscrito, asistira ? countTotal : 0, asistira);
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Gracias!',
+                    text: asistira ? 'Tu confirmación ha sido registrada.' : 'Lamentamos que no puedas asistir.',
+                    confirmButtonColor: '#D35D47'
+                }).then(() => {
+                    location.reload();
+                });
+
+            } catch (error) {
+                console.error(error);
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+                Swal.fire('Error', 'Hubo un problema de conexión. Intenta de nuevo.', 'error');
+            }
+        });
+
+        // ======================================
+        // FUNCIÓN: NOTIFICAR AL ORGANIZADOR (espejo del formulario VIP)
+        // ======================================
+        async function notificarOrganizador(emailOrganizador, nombreEvento, familia, pases, asistira) {
+            if (!emailOrganizador) return;
+            try {
+                const esDeclinado = !asistira;
+                const colorGradiente = esDeclinado ? "linear-gradient(135deg, #F43F5E 0%, #BE123C 100%)" : "linear-gradient(135deg, #FC7643 0%, #E11D48 100%)";
+                const colorPrimario = esDeclinado ? "#E11D48" : "#FC7643";
+                const bgContenedor = esDeclinado ? "#FFF1F2" : "#FFF5F0";
+                const bordeContenedor = esDeclinado ? "#FDA4AF" : "#FDBA74";
+                const textoContenedor = esDeclinado ? "#BE123C" : "#C2410C";
+                const tituloOrg = esDeclinado ? "¡Invitación Declinada!" : "¡Nueva Confirmación!";
+                const iconoOrg = esDeclinado ? "😔" : "🎉";
+
+                const htmlOrganizador = `
+                    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #F8FAFC; padding: 30px 15px;">
+                        <div style="background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08); border: 1px solid #E2E8F0;">
+                            <div style="background: ${colorGradiente}; padding: 45px 20px; text-align: center;">
+                                <h2 style="color: white; margin: 0; font-size: 25px; font-weight: 800;">${tituloOrg}</h2>
+                                <div style="font-size: 32px; margin: 12px 0;">${iconoOrg}</div>
+                                <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 15px;">Actualización para<br><b style="font-size: 20px; display: inline-block; margin-top: 8px; color: white;">${nombreEvento || 'tu evento'}</b></p>
+                            </div>
+                            <div style="padding: 30px;">
+                                <div style="background: ${bgContenedor}; border: 2px dashed ${bordeContenedor}; border-radius: 20px; padding: 30px 20px; text-align: center; margin-bottom: 30px;">
+                                    <p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Familia / Titular</p>
+                                    <h3 style="margin: 0 0 20px 0; color: #1E293B; font-size: 26px; font-weight: 900;">${familia}</h3>
+                                    <p style="margin: 0 0 5px 0; color: ${textoContenedor}; font-size: 12px; font-weight: 800; text-transform: uppercase;">Pases Confirmados</p>
+                                    <div style="font-size: 48px; font-weight: 900; color: ${colorPrimario}; line-height: 1; margin-bottom: 10px;">🎟️ ${pases}</div>
+                                </div>
+                                <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 1px solid #F1F5F9;">
+                                    <a href="https://eventoclic.com/dashboard" style="display: inline-block; background: ${colorGradiente}; color: white; text-decoration: none; padding: 15px 32px; border-radius: 14px; font-weight: bold; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 8px 20px rgba(252, 118, 67, 0.25);">Ir a mi Panel de Control</a>
+                                    <p style="color: #94A3B8; font-size: 12px; margin-top: 25px;">Este es un mensaje automático de tu sistema Eventoclic.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+
+                await addDoc(collection(db, "correos_salientes"), {
+                    to: emailOrganizador,
+                    message: {
+                        subject: `🔔 ${esDeclinado ? 'Declinación' : 'Confirmación'}: ${familia} — ${nombreEvento || 'tu evento'}`,
+                        html: htmlOrganizador
+                    }
+                });
+                console.log("Notificación organizador en cola:", emailOrganizador);
+            } catch (ex) {
+                console.error("Fallo al enviar notificación al organizador:", ex);
+            }
+        }
+    </script>
+</body>
+
+</html>
