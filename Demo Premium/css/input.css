@@ -1,0 +1,78 @@
+/* css/input.css — Tailwind v4 (CSS-first) */
+@import "tailwindcss";
+
+@source "../*.html";
+@source "../Formularios/**/*.html";
+@source "../js/**/*.js";
+
+/* Paleta de colores y tipografía de Eventoclic
+   Migrada y unificada desde todos los tailwind.config inline del proyecto */
+@theme {
+    /* Fuente principal */
+    --font-sans: "Plus Jakarta Sans", sans-serif;
+
+    /* Colores base */
+    --color-primario: #1E293B;
+    --color-secundario: #64748B;
+
+    /* Paleta de marca — naranja/terracota */
+    --color-brand: #FC7643;
+    --color-brand-light: #FFF1EB;
+    /* tono muy pálido — fondos de hover y badges en Dashboard */
+    --color-brand-accent: #F5A165;
+    /* naranja durazno — gradientes de logo y botón (index, SuperAdmin) */
+    --color-brand-dark: #CE5A4E;
+
+    /* Paleta de SuperAdmin — verde oscuro */
+    --color-admin: #154032;
+    --color-admin-light: #273340;
+    --color-admin-dark: #0e2e24;
+
+    /* Sombras personalizadas */
+    --shadow-suave: 0 10px 40px -10px rgba(252, 118, 67, 0.15);
+    --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+
+    /* Animaciones personalizadas */
+    --animate-fade-in-up: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    @keyframes fade-in-up {
+        0% {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/* Cursor manita en todos los elementos interactivos */
+button,
+a,
+[role="button"],
+label[for],
+select,
+[onclick] {
+    cursor: pointer;
+}
+
+/* ─── RESPONSIVE MÓVIL ─────────────────────────────────────
+   Evita el bounce de iOS en el contenedor raíz y mejora el
+   desplazamiento en tablas horizontales */
+html,
+body {
+    overscroll-behavior: none;
+    /* sin bounce iOS fuera del app */
+    -webkit-overflow-scrolling: touch;
+    /* scroll suave en iOS antiguo   */
+}
+
+/* El área de scroll principal respeta la zona segura del home indicator */
+.overflow-y-auto {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Las tablas con scroll horizontal no colapsan en móvil */
+.overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+}

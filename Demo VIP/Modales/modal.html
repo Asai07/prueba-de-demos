@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal de Bienvenida — Eventoclic Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        primario: '#1E293B',
+                        secundario: '#64748B',
+                        brand: '#FC7643',
+                        'brand-light': '#FFF1EB',
+                        'brand-accent': '#F5A165',
+                        'brand-dark': '#CE5A4E',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Blob decorativo animado */
+        @keyframes blobPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.15;
+            }
+
+            50% {
+                transform: scale(1.08);
+                opacity: 0.22;
+            }
+        }
+
+        .blob-animate {
+            animation: blobPulse 6s ease-in-out infinite;
+        }
+
+        .blob-animate-delay {
+            animation: blobPulse 8s ease-in-out 2s infinite;
+        }
+
+        /* Indicador de tab activa */
+        .tab-indicator {
+            transition: opacity 0.25s ease;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gradient-to-br from-[#FFF5F0] via-white to-[#FFF0E8] min-h-screen flex items-center justify-center font-sans text-primario p-4">
+
+    <!-- Botón de prueba (solo para vista standalone) -->
+    <button id="openModalBtn"
+        class="px-6 py-2.5 bg-white hover:bg-brand-light text-brand-dark font-bold rounded-xl border border-orange-200 shadow-sm transition-all">
+        Abrir Modal de Bienvenida
+    </button>
+
+    <!-- ==============================
+         MODAL DE BIENVENIDA EVENTOCLIC
+         ============================== -->
+    <div id="modernModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 opacity-0 pointer-events-none transition-opacity duration-500">
+
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-primario/40 backdrop-blur-md"></div>
+
+        <!-- Tarjeta principal -->
+        <div id="modernModalContent"
+            class="relative w-full max-w-5xl bg-white rounded-2xl sm:rounded-[2rem] overflow-hidden border border-orange-100 shadow-[0_30px_80px_-10px_rgba(206,90,78,0.18)] transform scale-95 transition-all duration-500">
+
+            <!-- Blobs decorativos de marca -->
+            <div
+                class="blob-animate absolute top-[-15%] left-[-8%] w-[500px] h-[500px] bg-brand/15 rounded-full mix-blend-multiply filter blur-[100px] pointer-events-none">
+            </div>
+            <div
+                class="blob-animate-delay absolute bottom-[-15%] right-[-8%] w-[450px] h-[450px] bg-brand-dark/12 rounded-full mix-blend-multiply filter blur-[100px] pointer-events-none">
+            </div>
+            <div
+                class="absolute top-[15%] right-[25%] w-[300px] h-[300px] bg-brand-accent/10 rounded-full mix-blend-multiply filter blur-[80px] pointer-events-none">
+            </div>
+
+            <!-- Contenido -->
+            <div class="relative z-10 flex flex-col md:flex-row min-h-[520px]">
+
+                <!-- ── Panel izquierdo: Tabs + contenido ── -->
+                <div class="flex-1 flex flex-col p-6 sm:p-8 md:border-r border-orange-100">
+
+                    <!-- Logo + Título -->
+                    <div class="flex items-center gap-3 mb-6">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/30 shrink-0">
+                            <i class="ph-fill ph-squares-four" style="color:white; font-size:18px;"></i>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-black text-primario tracking-tight leading-tight">
+                            Bienvenido a tu<br class="hidden sm:block"> Dashboard
+                        </h2>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="flex gap-6 border-b border-orange-100 pb-3 mb-6 relative">
+                        <button
+                            class="tab-btn active text-sm sm:text-base font-bold text-brand-dark transition-colors relative group"
+                            data-target="tutorial">
+                            Video Tutorial
+                            <div
+                                class="tab-indicator absolute -bottom-[13px] left-0 w-full h-[2px] bg-gradient-to-r from-brand-dark to-brand transition-opacity duration-300">
+                            </div>
+                        </button>
+                        <button
+                            class="tab-btn text-sm sm:text-base font-semibold text-secundario hover:text-primario transition-colors relative group"
+                            data-target="info">
+                            Información
+                            <div
+                                class="tab-indicator absolute -bottom-[13px] left-0 w-full h-[2px] bg-gradient-to-r from-brand-dark to-brand opacity-0 transition-opacity duration-300">
+                            </div>
+                        </button>
+                        <button
+                            class="tab-btn text-sm sm:text-base font-semibold text-secundario hover:text-primario transition-colors relative group"
+                            data-target="contact">
+                            Contacto
+                            <div
+                                class="tab-indicator absolute -bottom-[13px] left-0 w-full h-[2px] bg-gradient-to-r from-brand-dark to-brand opacity-0 transition-opacity duration-300">
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Contenido de tabs -->
+                    <div class="relative flex-1">
+
+                        <!-- Tab: Video Tutorial -->
+                        <div id="tutorial"
+                            class="tab-content absolute inset-0 transition-opacity duration-300 flex flex-col">
+                            <p class="text-secundario mb-4 text-sm sm:text-base leading-relaxed">
+                                Conoce cómo gestionar a tus invitados a través de tu dashboard con este tutorial paso a
+                                paso.
+                            </p>
+                            <div
+                                class="flex-1 w-full bg-orange-50/50 rounded-xl overflow-hidden border border-orange-100 relative min-h-[230px]">
+                                <iframe id="tutorialVideo" class="absolute inset-0 w-full h-full" src=""
+                                    title="Video Tutorial Eventoclic" frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen></iframe>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Información -->
+                        <div id="info"
+                            class="tab-content absolute inset-0 opacity-0 pointer-events-none transition-opacity duration-300">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-1">
+                                <div
+                                    class="bg-brand-light p-5 rounded-xl border border-orange-100 hover:shadow-md transition-all">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-3 shadow-sm text-brand">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                            <circle cx="9" cy="7" r="4" />
+                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                                        </svg>
+                                    </div>
+                                    <h4 class="text-brand-dark font-bold mb-1.5">Gestión de Invitados</h4>
+                                    <p class="text-sm text-secundario leading-relaxed">Agrega, edita y monitorea el
+                                        estado de cada persona en tiempo real.</p>
+                                </div>
+                                <div
+                                    class="bg-brand-light p-5 rounded-xl border border-orange-100 hover:shadow-md transition-all">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-3 shadow-sm text-green-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                    </div>
+                                    <h4 class="text-brand-dark font-bold mb-1.5">Confirmaciones</h4>
+                                    <p class="text-sm text-secundario leading-relaxed">Los asistentes confirman su
+                                        asistencia desde la invitación o formulario conectado.</p>
+                                </div>
+                                <div
+                                    class="bg-brand-light p-5 rounded-xl border border-orange-100 hover:shadow-md transition-all">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-3 shadow-sm text-brand">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                                        </svg>
+                                    </div>
+                                    <h4 class="text-brand-dark font-bold mb-1.5">Métricas</h4>
+                                    <p class="text-sm text-secundario leading-relaxed">Visualiza gráficos de asistencia
+                                        esperada vs. confirmada al instante.</p>
+                                </div>
+                                <div
+                                    class="bg-brand-light p-5 rounded-xl border border-orange-100 hover:shadow-md transition-all">
+                                    <div
+                                        class="w-8 h-8 rounded-lg bg-white flex items-center justify-center mb-3 shadow-sm text-brand-dark">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" />
+                                            <line x1="8" y1="21" x2="16" y2="21" />
+                                            <line x1="12" y1="17" x2="12" y2="21" />
+                                        </svg>
+                                    </div>
+                                    <h4 class="text-brand-dark font-bold mb-1.5">WhatsApp Masivo</h4>
+                                    <p class="text-sm text-secundario leading-relaxed">Envía invitaciones y
+                                        recordatorios personalizados con un solo clic.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Contacto -->
+                        <div id="contact"
+                            class="tab-content absolute inset-0 opacity-0 pointer-events-none transition-opacity duration-300">
+                            <p class="text-secundario mb-5 text-sm sm:text-base leading-relaxed">
+                                Si encuentras algún problema técnico con el despliegue del panel o la recepción de
+                                datos, escríbenos.
+                            </p>
+                            <div class="space-y-3">
+                                <a href="mailto:hola@eventoclic.com" class="flex items-center gap-4 bg-brand-light p-4 rounded-xl border border-orange-100
+                                           hover:shadow-md hover:border-orange-300 transition-all group no-underline">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0
+                                                group-hover:bg-brand group-hover:text-white text-brand transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <path
+                                                d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                            <polyline points="22,6 12,13 2,6" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-primario">Soporte Técnico</p>
+                                        <p class="text-sm text-brand-dark font-medium group-hover:underline">
+                                            hola@eventoclic.com</p>
+                                    </div>
+                                </a>
+                                <a href="https://wa.me/521XXXXXXXXXX" target="_blank" rel="noopener noreferrer" class="flex items-center gap-4 bg-green-50 p-4 rounded-xl border border-green-100
+                                           hover:shadow-md hover:border-green-300 transition-all group no-underline">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0
+                                                group-hover:bg-green-500 group-hover:text-white text-green-500 transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                            viewBox="0 0 24 24" fill="currentColor">
+                                            <path
+                                                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-primario">WhatsApp Directo</p>
+                                        <p class="text-sm text-green-600 font-medium group-hover:underline">Abrir chat
+                                            de soporte</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- ── Panel derecho: CTA ── -->
+                <div
+                    class="w-full md:w-[300px] p-6 sm:p-8 flex flex-col justify-between bg-gradient-to-br from-[#FFF8F5] to-[#FFF1EB]">
+
+                    <!-- Botón de cerrar -->
+                    <div class="flex justify-end">
+                        <button id="closeBtn"
+                            class="w-8 h-8 flex items-center justify-center rounded-full bg-white hover:bg-orange-100 border border-orange-200 text-secundario hover:text-brand-dark transition-all shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Logo decorativo de Eventoclic (maleta / evento) -->
+                    <div class="flex justify-center my-auto drop-shadow-[0_0_20px_rgba(252,118,67,0.25)]">
+                        <svg width="130" height="130" viewBox="0 0 100 100" class="opacity-95">
+                            <defs>
+                                <linearGradient id="ecGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#CE5A4E" />
+                                    <stop offset="50%" stop-color="#FC7643" />
+                                    <stop offset="100%" stop-color="#F5A165" />
+                                </linearGradient>
+                            </defs>
+                            <g fill="none" stroke="url(#ecGrad)" stroke-width="2.2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <!-- Símbolo geométrico alusivo a mesas/guests -->
+                                <rect x="20" y="20" width="40" height="40" rx="6" />
+                                <rect x="40" y="40" width="40" height="40" rx="6" />
+                                <circle cx="20" cy="20" r="3.5" fill="white" stroke="url(#ecGrad)" />
+                                <circle cx="60" cy="20" r="3.5" fill="white" stroke="url(#ecGrad)" />
+                                <circle cx="20" cy="60" r="3.5" fill="white" stroke="url(#ecGrad)" />
+                                <circle cx="80" cy="80" r="3.5" fill="white" stroke="url(#ecGrad)" />
+                                <circle cx="40" cy="80" r="3.5" fill="white" stroke="url(#ecGrad)" />
+                                <circle cx="80" cy="40" r="3.5" fill="white" stroke="url(#ecGrad)" />
+                            </g>
+                        </svg>
+                    </div>
+
+                    <!-- CTA -->
+                    <div>
+                        <h3 class="text-xl font-black text-primario mb-2 tracking-tight">¡Todo listo!</h3>
+                        <p class="text-sm text-secundario mb-6 leading-relaxed">
+                            Tu dashboard está configurado y esperándote. Da clic cuando estés listo para comenzar.
+                        </p>
+                        <button id="acceptBtn"
+                            class="w-full group relative px-6 py-3.5 bg-gradient-to-r from-brand-dark to-brand hover:opacity-90 text-white text-sm font-bold rounded-xl transition-all duration-300 flex items-center justify-between overflow-hidden shadow-lg shadow-brand/25 transform hover:-translate-y-0.5">
+                            <span class="relative z-10">Entendido</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="relative z-10 transform group-hover:translate-x-1 transition-transform">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const modal = document.getElementById('modernModal');
+            const modalContent = document.getElementById('modernModalContent');
+            const closeBtn = document.getElementById('closeBtn');
+            const acceptBtn = document.getElementById('acceptBtn');
+            const openModalBtn = document.getElementById('openModalBtn');
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const tutorialVideo = document.getElementById('tutorialVideo');
+
+            const openModal = () => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            };
+
+            const closeModal = () => {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modalContent.classList.remove('scale-100');
+                modalContent.classList.add('scale-95');
+                // Detener el video al cerrar
+                const iframeSrc = tutorialVideo.src;
+                tutorialVideo.src = iframeSrc;
+            };
+
+            // En versión standalone: abrir automáticamente
+            setTimeout(openModal, 600);
+
+            closeBtn.addEventListener('click', closeModal);
+            acceptBtn.addEventListener('click', closeModal);
+            if (openModalBtn) openModalBtn.addEventListener('click', openModal);
+
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+            // ── Lógica de tabs ──
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetId = btn.getAttribute('data-target');
+
+                    tabBtns.forEach(b => {
+                        b.classList.remove('text-brand-dark', 'font-bold');
+                        b.classList.add('text-secundario', 'font-semibold');
+                        b.querySelector('.tab-indicator').classList.add('opacity-0');
+                    });
+
+                    btn.classList.remove('text-secundario', 'font-semibold');
+                    btn.classList.add('text-brand-dark', 'font-bold');
+                    btn.querySelector('.tab-indicator').classList.remove('opacity-0');
+
+                    tabContents.forEach(content => {
+                        content.classList.remove('opacity-100');
+                        content.classList.add('opacity-0', 'pointer-events-none');
+                    });
+
+                    const targetContent = document.getElementById(targetId);
+                    targetContent.classList.remove('pointer-events-none');
+                    setTimeout(() => {
+                        targetContent.classList.remove('opacity-0');
+                        targetContent.classList.add('opacity-100');
+                    }, 50);
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

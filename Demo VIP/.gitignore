@@ -1,0 +1,78 @@
+# ================================
+# Node.js / npm
+# ================================
+node_modules/
+npm-debug.log*
+
+# ================================
+# Tailwind — el output se genera con: npm run build
+# No es necesario versionarlo; cualquiera puede regenerarlo
+# ================================
+css/output.css
+
+# ================================
+# Seguridad — NUNCA subir a GitHub
+# ================================
+# Si alguna vez mueves la config de Firebase a un archivo .env:
+.env
+.env.local
+.env.*.local
+firebase-config.local.js
+
+# Herramienta de migración con credenciales hardcodeadas — eliminar después de usar
+Formularios/migrate-timestamps.html
+
+# Credenciales de Admin de Firebase — NUNCA subir a GitHub (clave privada completa)
+scripts/serviceAccountKey.json
+serviceAccountKey.json
+
+# Copias de trabajo / backups locales de HTML
+dashboard-copy.html
+
+# firebase-config.js contiene las keys de Firebase.
+# Si el repo es PRIVADO: puedes comentar esta línea (es más cómodo no ignorarlo).
+# Si el repo es PÚBLICO: descomenta la siguiente línea y usa firebase-config.example.js como plantilla.
+# js/firebase-config.js
+
+# ================================
+# Sistema operativo
+# ================================
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ================================
+# Editores e IDEs
+# ================================
+.vscode/settings.json
+.vscode/launch.json
+*.suo
+*.user
+.idea/
+
+# ================================
+# Backups locales del proyecto
+# ================================
+backups/
+
+# ================================
+# Archivos temporales
+# ================================
+*.tmp
+*.log
+
+# ================================
+# Scripts
+# ================================
+scripts/
+
+# ================================
+# Firebase rules
+# ================================
+firestore.rules

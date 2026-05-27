@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventoclic | Panel de Eventos</title>
+
+    <!-- Favicon -->
+    <!--<link rel="icon" href="./assets/favicon.ico" type="image/x-icon">-->
+
+    <meta property="og:title" content="Eventoclic | Panel de Eventos">
+    <meta property="og:description"
+        content="Panel de control para eventos. Gestiona pases, invitados y confirmaciones.">
+    <meta property="og:image" content="https://panel.eventoclic.com/assets/image-preview.png">
+    <meta property="og:type" content="website">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Eventoclic | Panel de Eventos">
+    <meta name="twitter:description"
+        content="Panel de control para eventos. Gestiona pases, invitados y confirmaciones.">
+    <meta name="twitter:image" content="https://panel.eventoclic.com/assets/image-preview.png">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./css/output.css">
+    <link rel="stylesheet" href="./css/vanilla-sonner.min.css" />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="./js/vanilla-sonner.umd.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const sesionActiva = localStorage.getItem('cliente_activo_id');
+
+        if (!sesionActiva) {
+            window.location.replace('index.html');
+
+        }
+    </script>
+    <style>
+        @keyframes fadeInRow {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up>td {
+            animation: fadeInRow 0.4s ease-out forwards;
+        }
+
+        .tabla-en-checkin .col-normal {
+            display: none !important;
+        }
+
+        .tabla-en-checkin .col-checkin {
+            display: table-cell !important;
+        }
+
+        .tabla-en-checkin .fila-completada {
+            background-color: #f8fafc !important;
+            opacity: 0.6;
+        }
+
+        /* === Agrupamiento por Familia === */
+        .grupo-header-row td {
+            border-top: 2px solid #e9d5ff;
+        }
+
+        .grupo-separador-row td {
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-toggle-grupos {
+            transition: all 0.2s ease;
+        }
+
+        /* Ocultar barra de scroll pero mantener funcionalidad */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            /* IE y Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        /* ── Fix: scroll en iOS Safari (tablas dentro de body overflow:hidden) ─
+           touch-action:pan-x pan-y → iOS resuelve por eje qué contenedor
+           consume el gesto, sin bloquear el scroll vertical del padre.
+           Poner solo pan-x bloqueaba el desplazamiento vertical.
+        ──────────────────────────────────────────────────────────── */
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x pan-y;
+        }
+
+        /* Scroll vertical principal: contener el rebote para no heredarlo al body */
+        .overflow-y-auto {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+        }
+
+        /* ── Fix iOS: barras de píldoras / filtros ─────────────────────
+           En iOS, los <button> capturan el gesto antes de que el contenedor
+           scrollable pueda reconocerlo como swipe horizontal.
+           touch-action:manipulation en cada botón le dice al navegador que
+           responda solo a tap/doble-tap, liberando el swipe al padre.
+           El contenedor recibe -webkit-overflow-scrolling para inercia nativa.
+        ──────────────────────────────────────────────────────────── */
+        #barra-filtros,
+        .filtros-bar-ios {
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        /* Los botones dentro de las barras de filtros solo necesitan manejar taps */
+        #barra-filtros button,
+        .filtros-bar-ios button,
+        .filtro-btn,
+        .filtro-btn-envios {
+            touch-action: manipulation;
+        }
+
+        /* ── Fix iOS: thead con onclick no bloquea scroll horizontal ────
+           Los <th> con onclick y cursor:pointer en iOS capturan el swipe
+           como si fuera un tap, bloqueando el scroll de las primeras filas.
+           touch-action:manipulation libera el swipe sin romper los clics.
+        ──────────────────────────────────────────────────────────── */
+        table thead th {
+            touch-action: manipulation;
+        }
+
+        /* Todas las barras hide-scrollbar siempre con scroll nativo iOS */
+        .hide-scrollbar {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+    <!-- Fix #14: Detección de estado offline para mostrar aviso visible al usuario -->
+    <script>
+        function _actualizarBannerConexion() {
+            const offlineBanner = document.getElementById('offline-banner');
+            if (!offlineBanner) return;
+            if (!navigator.onLine) {
+                offlineBanner.classList.remove('hidden');
+            } else {
+                offlineBanner.classList.add('hidden');
+            }
+        }
+        window.addEventListener('offline', _actualizarBannerConexion);
+        window.addEventListener('online', _actualizarBannerConexion);
+    </script>
+</head>
+
+<body class="bg-white text-primario font-sans flex flex-col antialiased selection:bg-brand selection:text-white"
+    style="height: 100vh; height: 100dvh; overflow: hidden;">
+
+    <ol id="sonner-toast-container" position="top-right" duration="4000" rich-colors="true"></ol>
+
+
+    <!-- Fix #14: Banner de estado offline — se activa con los listeners del head -->
+    <div id="offline-banner"
+        class="hidden w-full shrink-0 bg-red-600 text-white px-4 py-2 text-center text-sm font-bold z-[200] flex items-center justify-center gap-2 shadow-lg">
+        <i class="ph-bold ph-wifi-slash text-lg"></i>
+        Sin conexión a internet — Los cambios no se guardarán hasta recuperar la señal.
+    </div>
+
+    <div id="global-alert-banner"
+        class="hidden w-full shrink-0 relative text-white px-4 py-2.5 text-center text-sm font-medium z-[100] shadow-md transition-all duration-500 flex items-center justify-center gap-2">
+        <span id="global-alert-icon" class="text-lg"></span>
+        <span id="global-alert-text"></span>
+        <button onclick="document.getElementById('global-alert-banner').style.display='none'"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white transition-colors bg-black/10 hover:bg-black/20 rounded-full w-6 h-6 flex items-center justify-center">
+            <i class="ph-bold ph-x"></i>
+        </button>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden w-full relative">
+        <div id="mobile-overlay" class="fixed inset-0 bg-black/20 z-40 hidden lg:hidden transition-opacity"
+            onclick="toggleMenu()"></div>
+
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 w-[260px] bg-white/80 backdrop-blur-xl border-r border-orange-100/50 flex flex-col justify-between z-50 transform -translate-x-full lg:relative lg:translate-x-0 transition-transform duration-300 shadow-2xl lg:shadow-none">
+            <div class="flex-1 flex flex-col overflow-y-auto hide-scrollbar">
+                <!-- X de cierre: absolute, fuera del flujo del logo -->
+                <button onclick="toggleMenu()"
+                    class="lg:hidden absolute top-3 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-brand transition-colors">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+
+                <div class="h-20 flex items-center px-8 border-b border-orange-50 shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-dark to-brand flex items-center justify-center shadow-lg shadow-brand/30 transform -rotate-3 transition-transform duration-300 shrink-0">
+                            <img src="assets/imagotipo.png" alt="Icono" class="w-5 h-5 object-contain relative z-10">
+                        </div>
+                        <img src="assets/logo-mievento-01.svg" alt="Eventoclic Logo" class="h-6 w-auto object-contain">
+                    </div>
+                </div>
+
+                <nav class="px-4 mt-6 space-y-2 flex-1">
+                    <button id="tab-dashboard" onclick="cambiarPestana('dashboard')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-brand-dark to-brand text-white font-bold transition-all shadow-md shadow-brand/20 border border-transparent"><i
+                            class="ph-fill ph-squares-four text-xl"></i> Dashboard</button>
+                    <button id="tab-codigos" onclick="cambiarPestana('codigos')"
+                        class="hidden nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-secundario font-medium hover:bg-brand-light hover:text-brand-dark transition-all border border-transparent"><i
+                            class="ph-bold ph-ticket text-xl"></i> Mis Códigos</button>
+                    <button id="tab-invitados" onclick="cambiarPestana('invitados')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-secundario font-medium hover:bg-brand-light hover:text-brand-dark transition-all border border-transparent"><i
+                            class="ph ph-users text-xl"></i> Mis Invitados</button>
+                    <button id="tab-detalles" onclick="cambiarPestana('detalles')"
+                        class="hidden nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-secundario font-medium hover:bg-brand-light hover:text-brand-dark transition-all border border-transparent"><i
+                            class="ph ph-list-dashes text-xl"></i> Detalles Invitados</button>
+                    <button id="tab-invitaciones" onclick="cambiarPestana('invitaciones')"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-secundario font-medium hover:bg-brand-light hover:text-brand-dark transition-all border border-transparent"><i
+                            class="ph ph-envelope-simple-open text-xl"></i> Invitaciones</button>
+                    <button id="tab-ajustes" onclick="cambiarPestana('ajustes')"
+                        class="hidden nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-secundario font-medium hover:bg-brand-light hover:text-brand-dark transition-all border border-transparent"><i
+                            class="ph ph-gear text-xl"></i> Ajustes</button>
+                </nav>
+
+                <div class="p-6 shrink-0 border-t border-orange-50">
+                    <div
+                        class="bg-white rounded-3xl p-6 border border-orange-200 shadow-sm relative overflow-hidden mb-4">
+                        <div class="relative z-10">
+                            <h4 id="sidebar-evento-nombre"
+                                class="text-[17px] font-black text-brand-dark mb-0.5 tracking-tight leading-tight">
+                                Cargando...
+                            </h4>
+                            <p id="sidebar-evento-fecha" class="text-[13px] text-brand font-medium mb-4">Calculando
+                                días...
+                            </p>
+                            <div class="w-full bg-orange-50 rounded-full h-2.5 mb-2 overflow-hidden shadow-inner">
+                                <div id="sidebar-progress-bar"
+                                    class="bg-gradient-to-r from-brand-dark to-brand h-full rounded-full transition-all duration-1000"
+                                    style="width: 0%"></div>
+                            </div>
+                            <p id="sidebar-pases-texto"
+                                class="text-xs text-brand-dark font-bold text-right tracking-wide">0
+                                / 0
+                                Confirmados</p>
+                        </div>
+                    </div>
+                    <button onclick="cerrarSesion()"
+                        class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-red-500 font-bold hover:bg-red-50 transition-colors border border-transparent hover:border-red-100"><i
+                            class="ph-bold ph-sign-out text-lg"></i> Cerrar sesión</button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            <header
+                class="h-20 lg:h-24 px-6 lg:px-10 flex items-center justify-between shrink-0 bg-white/40 backdrop-blur-md border-b border-orange-50/50 z-10">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleMenu()"
+                        class="lg:hidden p-2 -ml-2 text-gray-600 rounded-lg hover:bg-white/50"><i
+                            class="ph-bold ph-list text-2xl"></i></button>
+                    <div>
+                        <h1 id="header-titulo" class="text-xl lg:text-2xl font-bold tracking-tight text-primario">¡Hola!
+                            👋
+                        </h1>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 lg:gap-3">
+                    <a id="btn-soporte-wa" href="#" target="_blank"
+                        class="bg-white border border-green-200 hover:bg-green-50 text-green-600 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
+                        <i class="ph-bold ph-chat-circle-dots text-lg"></i> <span
+                            class="hidden sm:inline">Soporte</span>
+                    </a>
+                    <button id="btn-nuevo-invitado"
+                        class="bg-gradient-to-r from-brand-dark to-brand hover:opacity-90 text-white px-4 lg:px-5 py-2 lg:py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-brand/25 transition-all flex items-center gap-2 transform hover:-translate-y-0.5"><i
+                            class="ph-bold ph-plus"></i> <span class="hidden sm:inline">Nuevo Invitado</span></button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 lg:p-10 pt-6 pb-8 lg:pb-10"
+                style="padding-bottom: max(2rem, env(safe-area-inset-bottom, 2rem))">
+                <div class="max-w-7xl mx-auto">
+
+                    <div id="vista-dashboard" class="vista-seccion space-y-6 lg:space-y-8 block animate-fade-in">
+                        <!-- BENTO GRID -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+
+                            <!-- Columna Izquierda: Tarjetas Pequeñas 2x2 -->
+                            <div class="lg:col-span-5 grid grid-cols-2 gap-4 lg:gap-6">
+                                <!-- Pases Totales -->
+                                <div
+                                    class="bg-white rounded-2xl p-4 lg:p-6 border border-orange-50 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                    <div
+                                        class="absolute -bottom-6 -right-6 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl">
+                                    </div>
+                                    <div
+                                        class="absolute top-4 right-4 text-[10px] font-black tracking-widest text-orange-400 uppercase">
+                                        Total</div>
+                                    <div
+                                        class="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center mb-4 text-orange-400 group-hover:scale-110 transition-transform">
+                                        <i class="ph-fill ph-ticket text-lg"></i>
+                                    </div>
+                                    <p class="text-xs text-secundario font-medium mb-1">Pases Totales</p>
+                                    <h3 class="text-3xl font-black text-orange-500 relative z-10" id="stat-pases-num">
+                                        <div class="h-8 w-16 bg-slate-100 animate-pulse rounded"></div>
+                                    </h3>
+                                </div>
+
+                                <!-- Confirmados -->
+                                <div
+                                    class="bg-white rounded-2xl p-4 lg:p-6 border border-green-50 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                    <div
+                                        class="absolute -bottom-6 -right-6 w-24 h-24 bg-green-500/10 rounded-full blur-2xl">
+                                    </div>
+                                    <div
+                                        class="absolute top-4 right-4 text-[10px] font-black tracking-widest text-green-500 uppercase">
+                                        OK</div>
+                                    <div
+                                        class="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center mb-4 text-green-500 group-hover:scale-110 transition-transform">
+                                        <i class="ph-fill ph-check-circle text-lg"></i>
+                                    </div>
+                                    <p class="text-xs text-secundario font-medium mb-1">Confirmados</p>
+                                    <h3 class="text-3xl font-black text-green-600 relative z-10" id="stat-confirmados">
+                                        <div class="h-8 w-16 bg-slate-100 animate-pulse rounded"></div>
+                                    </h3>
+                                </div>
+
+                                <!-- Pendientes -->
+                                <div
+                                    class="bg-white rounded-2xl p-4 lg:p-6 border border-amber-50 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                    <div
+                                        class="absolute -bottom-6 -right-6 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl">
+                                    </div>
+                                    <div
+                                        class="absolute top-4 right-4 text-[10px] font-black tracking-widest text-amber-500 uppercase">
+                                        Espera</div>
+                                    <div
+                                        class="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center mb-4 text-amber-500 group-hover:scale-110 transition-transform">
+                                        <i class="ph-fill ph-hourglass-high text-lg"></i>
+                                    </div>
+                                    <p class="text-xs text-secundario font-medium mb-1">Pendientes</p>
+                                    <h3 class="text-3xl font-black text-amber-500 relative z-10" id="stat-pendientes">
+                                        <div class="h-8 w-16 bg-slate-100 animate-pulse rounded"></div>
+                                    </h3>
+                                </div>
+
+                                <!-- Declinados -->
+                                <div
+                                    class="bg-white rounded-2xl p-4 lg:p-6 border border-red-50 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                    <div
+                                        class="absolute -bottom-6 -right-6 w-24 h-24 bg-red-500/10 rounded-full blur-2xl">
+                                    </div>
+                                    <div
+                                        class="absolute top-4 right-4 text-[10px] font-black tracking-widest text-red-400 uppercase">
+                                        No</div>
+                                    <div
+                                        class="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center mb-4 text-red-500 group-hover:scale-110 transition-transform">
+                                        <i class="ph-fill ph-x-circle text-lg"></i>
+                                    </div>
+                                    <p class="text-xs text-secundario font-medium mb-1">Declinados</p>
+                                    <h3 class="text-3xl font-black text-red-500 relative z-10" id="stat-declinados">
+                                        <div class="h-8 w-16 bg-slate-100 animate-pulse rounded"></div>
+                                    </h3>
+                                </div>
+                            </div>
+
+                            <div
+                                class="lg:col-span-7 bg-white rounded-2xl p-6 lg:p-8 border border-orange-50 shadow-sm relative overflow-hidden hidden lg:flex flex-col">
+
+                                <!-- Blobs decorativos (ahora son más intensos para que se noten como manchas cálidas y suaves) -->
+                                <div
+                                    class="absolute -top-12 -right-12 w-64 h-64 bg-orange-400/30 rounded-full blur-[60px] pointer-events-none z-0">
+                                </div>
+                                <div
+                                    class="absolute -bottom-8 -left-8 w-32 h-32 bg-orange-500/10 rounded-full blur-[30px] pointer-events-none z-0">
+                                </div>
+
+                                <div
+                                    class="absolute top-6 right-6 flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-500 rounded-full text-[10px] font-bold uppercase tracking-wider z-10">
+                                    <i class="ph-bold ph-chart-pie-slice text-sm"></i> En tiempo
+                                    real
+                                </div>
+
+                                <div class="relative z-10">
+                                    <h4 class="text-[10px] font-black tracking-widest text-orange-400 uppercase mb-1">
+                                        Distribución de Asistencia</h4>
+                                    <h2 class="text-xl font-bold text-primario mb-8">Estado de Invitados</h2>
+                                </div>
+
+                                <div class="flex-1 flex items-center relative z-10 w-full pl-4 pr-6">
+                                    <!-- Gráfica Chart.js a la izquierda -->
+                                    <div
+                                        class="w-1/3 text-center border-r border-gray-100 px-4 flex flex-col items-center justify-center">
+                                        <div class="relative w-36 h-36 mb-3 flex items-center justify-center">
+                                            <!-- Chart.js Element -->
+                                            <canvas id="attendanceChart"
+                                                class="absolute inset-0 w-full h-full"></canvas>
+
+                                            <div class="absolute flex flex-col items-center justify-center">
+                                                <span id="chart-total-passes"
+                                                    class="text-4xl font-black text-slate-800 leading-none mt-1">0</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            class="text-[10px] font-black uppercase tracking-widest text-orange-500 mt-2">
+                                            Pases</div>
+                                    </div>
+
+                                    <!-- Barras a la derecha -->
+                                    <div class="w-2/3 pl-8 space-y-5">
+
+                                        <!-- Confirmados Row -->
+                                        <div>
+                                            <div class="flex justify-between items-end mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                                                    <span
+                                                        class="text-xs font-semibold text-secundario">Confirmados</span>
+                                                </div>
+                                                <span id="chart-val-conf"
+                                                    class="text-sm font-black text-primario">0</span>
+                                            </div>
+                                            <div class="w-full bg-emerald-50 rounded-full h-1.5 overflow-hidden">
+                                                <div id="chart-bar-conf"
+                                                    class="bg-emerald-400 h-full rounded-full transition-all duration-1000 ease-out"
+                                                    style="width: 0%"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Pendientes Row -->
+                                        <div>
+                                            <div class="flex justify-between items-end mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-2 h-2 rounded-full bg-amber-400"></div>
+                                                    <span
+                                                        class="text-xs font-semibold text-secundario">Pendientes</span>
+                                                </div>
+                                                <span id="chart-val-pend"
+                                                    class="text-sm font-black text-primario">0</span>
+                                            </div>
+                                            <div class="w-full bg-amber-50 rounded-full h-1.5 overflow-hidden">
+                                                <div id="chart-bar-pend"
+                                                    class="bg-amber-400 h-full rounded-full transition-all duration-1000 ease-out"
+                                                    style="width: 0%"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Declinados Row -->
+                                        <div>
+                                            <div class="flex justify-between items-end mb-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-2 h-2 rounded-full bg-red-400"></div>
+                                                    <span
+                                                        class="text-xs font-semibold text-secundario">Declinados</span>
+                                                </div>
+                                                <span id="chart-val-dec"
+                                                    class="text-sm font-black text-primario">0</span>
+                                            </div>
+                                            <div class="w-full bg-red-50 rounded-full h-1.5 overflow-hidden">
+                                                <div id="chart-bar-dec"
+                                                    class="bg-red-400 h-full rounded-full transition-all duration-1000 ease-out"
+                                                    style="width: 0%"></div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 pt-6 border-t border-gray-50 flex items-center justify-between">
+                                    <div>
+                                        <span
+                                            class="text-[10px] font-black uppercase tracking-widest text-brand block mb-1">Tasa
+                                            de Respuesta</span>
+                                        <span id="chart-tasa-respuesta"
+                                            class="text-2xl font-black text-primario">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+                            <div
+                                class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-orange-50 overflow-hidden flex flex-col">
+                                <div
+                                    class="px-4 lg:px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-white">
+                                    <h2 class="text-base lg:text-lg font-bold text-primario">Últimos Invitados</h2>
+                                    <button onclick="cambiarPestana('invitados')"
+                                        class="text-xs lg:text-sm font-bold text-brand hover:text-brand-dark transition-colors flex items-center gap-1">Ver
+                                        todos <i class="ph-bold ph-arrow-right"></i></button>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left min-w-full">
+                                        <thead>
+                                            <tr class="bg-gray-50/50">
+                                                <th
+                                                    class="px-2 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider">
+                                                    Familia / Integrantes</th>
+                                                <th
+                                                    class="px-2 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider">
+                                                    Código</th>
+                                                <th
+                                                    class="px-2 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider text-center">
+                                                    Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-50">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white rounded-2xl shadow-sm border border-orange-50 p-6 flex flex-col h-full">
+                                <h2 class="text-base lg:text-lg font-bold text-primario mb-6">Actividad</h2>
+                                <div class="relative border-l-2 border-pink-100 ml-5 space-y-6 pb-4 flex-1"
+                                    id="timeline-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vista-codigos" class="vista-seccion hidden animate-fade-in">
+                    <div
+                        class="bg-white rounded-2xl shadow-suave border border-pink-50 overflow-hidden flex flex-col min-h-[70vh]">
+                        <div
+                            class="px-6 lg:px-8 py-6 border-b border-pink-50 flex justify-between items-center bg-white">
+                            <div>
+                                <h2 class="text-xl font-bold text-primario">Mis Códigos de Acceso</h2>
+                                <p class="text-sm text-secundario mt-1">Copia y envía estos códigos a tus invitados
+                                    (Son
+                                    de uso ilimitado).</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto flex-1">
+                            <table class="w-full text-left min-w-max transition-all">
+                                <thead>
+                                    <tr class="bg-gray-50/50">
+                                        <th
+                                            class="px-3 sm:px-8 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Código</th>
+                                        <th
+                                            class="px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Categoría</th>
+                                        <th
+                                            class="px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Uso</th>
+                                        <th
+                                            class="px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider text-center sm:text-right">
+                                            Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-codigos" class="divide-y divide-gray-50"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vista-invitados" class="vista-seccion hidden animate-fade-in">
+                    <div
+                        class="bg-white rounded-2xl shadow-suave border border-pink-50 overflow-hidden flex flex-col min-h-[70vh]">
+                        <div
+                            class="px-6 lg:px-8 py-6 border-b border-pink-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white">
+                            <div>
+                                <h2 class="text-xl font-bold text-primario">Directorio de Invitados</h2>
+                                <p class="text-sm text-secundario mt-1">Aquí verás a las personas que ya
+                                    confirmaron.
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-3 w-full sm:w-auto py-2 px-1 -mx-1">
+                                <div class="relative flex-1 sm:w-64 shrink-0">
+                                    <i
+                                        class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="inputBuscador" placeholder="Buscar familia..."
+                                        class="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand transition-all relative">
+                                </div>
+
+                                <button id="btn-checkin" onclick="window.toggleCheckIn()"
+                                    class="bg-slate-800 hover:bg-black text-white px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shadow-sm shrink-0">
+                                    <i class="ph-bold ph-scan text-lg"></i> <span class="hidden sm:inline">Modo
+                                        Recepción</span>
+                                </button>
+
+                                <button id="btn-exportar-excel" onclick="window.exportarDirectorio()"
+                                    class="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shadow-sm shrink-0">
+                                    <i class="ph-bold ph-download-simple text-brand text-lg"></i> <span
+                                        class="hidden sm:inline">Exportar</span>
+                                </button>
+
+                                <button id="btn-importar-excel" onclick="abrirModalImportar()"
+                                    class="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 shadow-sm">
+                                    <i class="ph-bold ph-file-csv text-green-600 text-lg"></i> <span
+                                        class="hidden sm:inline">Importar
+                                        Excel</span>
+                                </button>
+
+
+                                <button id="btn-escanear-qr" onclick="window.abrirScannerQR()" style="display: none;"
+                                    class="bg-white hover:bg-gray-50 text-slate-700 border border-gray-200 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 shadow-sm">
+                                    <i class="ph-bold ph-qr-code text-indigo-600 text-lg"></i> <span
+                                        class="hidden sm:inline">Escanear
+                                        QR</span>
+                                </button>
+
+                            </div>
+                        </div>
+
+                        <div id="barra-filtros"
+                            class="px-6 lg:px-8 py-3 bg-gray-50/40 border-b border-pink-50 flex items-center gap-2.5 overflow-x-auto hide-scrollbar">
+                            <button
+                                class="filtro-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap shadow-sm text-white bg-brand border-brand hover:bg-brand-dark"
+                                data-filtro="todos">Todos</button>
+                            <button
+                                class="filtro-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap bg-white text-green-600 border-green-200 hover:bg-green-50"
+                                data-filtro="confirmado">Confirmados</button>
+                            <button
+                                class="filtro-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap bg-white text-orange-500 border-orange-200 hover:bg-orange-50"
+                                data-filtro="pendiente">Pendientes</button>
+                            <button
+                                class="filtro-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap bg-white text-red-500 border-red-200 hover:bg-red-50"
+                                data-filtro="declinado">Declinados</button>
+                        </div>
+                        <div class="overflow-x-auto flex-1">
+
+                            <table id="tabla-directorio-container" class="w-full text-left min-w-max transition-all">
+                                <thead>
+                                    <tr class="bg-gray-50/50">
+                                        <th onclick="window.cambiarOrden('familia')"
+                                            class="px-4 sm:px-6 lg:px-8 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider cursor-pointer hover:bg-pink-50 transition-colors select-none group">
+                                            <div class="flex items-center gap-1.5 w-max">Familia <span
+                                                    class="hidden sm:inline">/ Integrantes</span>
+                                                <i id="sort-icon-familia"
+                                                    class="ph-bold ph-caret-up text-gray-300 transition-transform duration-300 group-hover:text-brand"
+                                                    style="display: none;"></i>
+                                            </div>
+                                        </th>
+                                        <th onclick="window.cambiarOrden('codigo')"
+                                            class="col-normal px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider cursor-pointer hover:bg-pink-50 transition-colors select-none group">
+                                            <div class="flex items-center gap-1.5 w-max">Código <span
+                                                    class="hidden sm:inline">Usado</span> <i id="sort-icon-codigo"
+                                                    class="ph-bold ph-caret-up text-gray-300 transition-transform duration-300 group-hover:text-brand"
+                                                    style="display: none;"></i></div>
+                                        </th>
+                                        <th onclick="window.cambiarOrden('pases')"
+                                            class="col-normal px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider cursor-pointer hover:bg-pink-50 transition-colors select-none group">
+                                            <div class="flex items-center gap-1.5 w-max">Pases <i id="sort-icon-pases"
+                                                    class="ph-bold ph-caret-up text-gray-300 transition-transform duration-300 group-hover:text-brand"
+                                                    style="display: none;"></i></div>
+                                        </th>
+                                        <th onclick="window.cambiarOrden('estado')"
+                                            class="col-normal px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider cursor-pointer hover:bg-pink-50 transition-colors select-none group">
+                                            <div class="flex items-center gap-1.5 w-max">Estado <i id="sort-icon-estado"
+                                                    class="ph-bold ph-caret-up text-gray-300 transition-transform duration-300 group-hover:text-brand"
+                                                    style="display: none;"></i></div>
+                                        </th>
+                                        <th
+                                            class="col-normal px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-secundario uppercase tracking-wider text-center sm:text-right w-24">
+                                            Acciones
+                                        </th>
+                                        <th class="col-checkin px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-orange-500 uppercase tracking-wider text-center"
+                                            style="display: none;">
+                                            <i class="ph-fill ph-table"></i> Mesa
+                                        </th>
+
+                                        <th class="col-checkin px-3 sm:px-6 py-3 sm:py-4 text-[10px] sm:text-xs font-bold text-admin uppercase tracking-wider text-center"
+                                            style="display: none;">
+                                            Control <span class="hidden sm:inline">de Acceso</span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-directorio" class="divide-y divide-gray-50">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div
+                            class="px-6 lg:px-8 py-4 border-t border-pink-50 bg-gray-50/30 flex justify-between items-center text-sm">
+                            <span class="text-secundario font-medium">Total: <b id="total-registros"
+                                    class="text-primario">0</b> invitados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vista-invitaciones" class="vista-seccion hidden animate-fade-in">
+                </div>
+                <div id="vista-ajustes" class="vista-seccion hidden animate-fade-in">
+                    <div
+                        class="bg-white rounded-3xl shadow-card border border-orange-50 overflow-hidden flex flex-col max-w-6xl mx-auto">
+
+                        <div class="px-6 lg:px-10 py-8 border-b border-orange-50 bg-white">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand">
+                                    <i class="ph-bold ph-faders text-xl"></i>
+                                </div>
+                                <h2 class="text-2xl font-black text-primario">Personalización de Mensajes</h2>
+                            </div>
+                            <p class="text-sm text-secundario lg:ml-13">Redacta los textos exactos que tus invitados
+                                recibirán por
+                                WhatsApp. El sistema rellenará los datos automáticamente.</p>
+                        </div>
+
+                        <div class="p-6 lg:p-10 bg-slate-50/50 space-y-8">
+
+                            <div
+                                class="bg-white p-6 rounded-2xl border border-orange-100 shadow-sm relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-1.5 h-full bg-brand"></div>
+                                <h4 class="text-sm font-bold text-primario flex items-center gap-2 mb-3">
+                                    <i class="ph-fill ph-magic-wand text-brand text-lg"></i> Variables Dinámicas
+                                </h4>
+                                <p class="text-xs text-secundario mb-4">Copia y pega estas etiquetas en tus
+                                    mensajes. Se
+                                    convertirán
+                                    mágicamente en los datos reales de cada familia al momento de enviar el
+                                    WhatsApp.
+                                </p>
+                                <div class="flex flex-wrap gap-2.5">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 bg-brand-light text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold border border-brand/20 shadow-sm cursor-help transition-transform hover:scale-105"
+                                        title="Ej. Familia Martínez">
+                                        <i class="ph-bold ph-users text-brand"></i> [FAMILIA]
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1.5 bg-brand-light text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold border border-brand/20 shadow-sm cursor-help transition-transform hover:scale-105"
+                                        title="Ej. 3">
+                                        <i class="ph-bold ph-ticket text-brand"></i> [PASES]
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1.5 bg-brand-light text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold border border-brand/20 shadow-sm cursor-help transition-transform hover:scale-105"
+                                        title="Ej. KYA-124">
+                                        <i class="ph-bold ph-password text-brand"></i> [CODIGO]
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1.5 bg-brand-light text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold border border-brand/20 shadow-sm cursor-help transition-transform hover:scale-105"
+                                        title="Enlace a tu evento">
+                                        <i class="ph-bold ph-link text-brand"></i> [LINK]
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center gap-1.5 bg-brand-light text-brand-dark px-3 py-1.5 rounded-lg text-xs font-bold border border-brand/20 shadow-sm cursor-help transition-transform hover:scale-105"
+                                        title="Mesa asignada (si existe)">
+                                        <i class="ph-bold ph-table text-brand"></i> [MESA]
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+                                <div
+                                    class="bg-white rounded-2xl p-1 border border-green-100 shadow-sm focus-within:ring-2 focus-within:ring-green-400 focus-within:border-transparent transition-all group">
+                                    <div
+                                        class="p-4 border-b border-slate-50 bg-green-50/50 rounded-t-xl flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center group-focus-within:bg-green-500 group-focus-within:text-white transition-colors">
+                                                <i class="ph-bold ph-whatsapp-logo"></i>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-bold text-green-700">Primera
+                                                    Invitación</label>
+                                                <span
+                                                    class="text-[10px] text-green-600/80 font-bold uppercase tracking-wide">Vinculado
+                                                    al botón Verde</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <textarea id="ajuste-msj-nuevo" rows="8"
+                                        class="w-full bg-white rounded-b-xl p-5 text-sm text-primario focus:outline-none resize-none leading-relaxed"
+                                        placeholder="Escribe tu mensaje aquí..."></textarea>
+                                </div>
+
+                                <div
+                                    class="bg-white rounded-2xl p-1 border border-orange-100 shadow-sm focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent transition-all group">
+                                    <div
+                                        class="p-4 border-b border-slate-50 bg-orange-50/50 rounded-t-xl flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="w-8 h-8 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center group-focus-within:bg-orange-500 group-focus-within:text-white transition-colors">
+                                                <i class="ph-bold ph-bell-ringing"></i>
+                                            </div>
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-bold text-orange-600">Recordatorio</label>
+                                                <span
+                                                    class="text-[10px] text-orange-500/80 font-bold uppercase tracking-wide">Vinculado
+                                                    al botón Naranja</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <textarea id="ajuste-msj-recordatorio" rows="8"
+                                        class="w-full bg-white rounded-b-xl p-5 text-sm text-primario focus:outline-none resize-none leading-relaxed"
+                                        placeholder="Escribe tu mensaje aquí..."></textarea>
+                                </div>
+
+                            </div>
+
+                            <div class="flex justify-end pt-4 border-t border-slate-200">
+                                <button onclick="window.guardarAjustesWA()"
+                                    class="bg-brand hover:bg-brand-dark text-white px-8 py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-brand/30 transition-all flex items-center gap-2 transform hover:-translate-y-0.5 w-full sm:w-auto justify-center">
+                                    <i class="ph-bold ph-floppy-disk text-lg"></i> Guardar Mensajes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="ajustes-correo-container"
+                        class="bg-white rounded-3xl shadow-card border border-blue-50 overflow-hidden flex flex-col max-w-6xl mx-auto mt-8 hidden animate-fade-in">
+                        <div
+                            class="px-6 lg:px-10 py-8 border-b border-blue-50 bg-gradient-to-r from-blue-50/50 to-white">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                                    <i class="ph-bold ph-envelope-simple-open text-xl"></i>
+                                </div>
+                                <h2 class="text-2xl font-black text-primario">Campaña de Correos (Mailings)</h2>
+                            </div>
+                            <p class="text-sm text-secundario lg:ml-13">Envía un recordatorio masivo a todos tus
+                                invitados confirmados.
+                                Límite de 3 envíos por evento para proteger la reputación del servidor.</p>
+                        </div>
+
+                        <div class="p-6 lg:p-10 bg-slate-50/50 space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                <div class="md:col-span-2 mb-2">
+                                    <label class="block text-xs font-bold text-secundario uppercase mb-3 ml-1">Diseño
+                                        del Correo</label>
+                                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <label class="relative cursor-pointer">
+                                            <input type="radio" name="mail-template" value="boda" class="peer sr-only"
+                                                checked>
+                                            <div
+                                                class="p-3 border-2 border-slate-200 rounded-xl hover:bg-slate-50 peer-checked:border-amber-400 peer-checked:bg-amber-50 peer-checked:shadow-md transition-all text-center">
+                                                <div class="text-2xl mb-1">🥂</div>
+                                                <div class="text-xs font-bold text-slate-700">Elegante / Boda</div>
+                                            </div>
+                                        </label>
+                                        <label class="relative cursor-pointer">
+                                            <input type="radio" name="mail-template" value="xv" class="peer sr-only">
+                                            <div
+                                                class="p-3 border-2 border-slate-200 rounded-xl hover:bg-slate-50 peer-checked:border-fuchsia-400 peer-checked:bg-fuchsia-50 peer-checked:shadow-md transition-all text-center">
+                                                <div class="text-2xl mb-1">✨</div>
+                                                <div class="text-xs font-bold text-slate-700">XV Años / Glam</div>
+                                            </div>
+                                        </label>
+                                        <label class="relative cursor-pointer">
+                                            <input type="radio" name="mail-template" value="fiesta"
+                                                class="peer sr-only">
+                                            <div
+                                                class="p-3 border-2 border-slate-200 rounded-xl hover:bg-slate-50 peer-checked:border-blue-400 peer-checked:bg-blue-50 peer-checked:shadow-md transition-all text-center">
+                                                <div class="text-2xl mb-1">🥳</div>
+                                                <div class="text-xs font-bold text-slate-700">Casual / Fiesta</div>
+                                            </div>
+                                        </label>
+                                        <label class="relative cursor-pointer">
+                                            <input type="radio" name="mail-template" value="urgencia"
+                                                class="peer sr-only">
+                                            <div
+                                                class="p-3 border-2 border-slate-200 rounded-xl hover:bg-slate-50 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:shadow-md transition-all text-center">
+                                                <div class="text-2xl mb-1">⚠️</div>
+                                                <div class="text-xs font-bold text-slate-700">Aviso Urgente</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="md:col-span-2 mt-2">
+                                    <label class="block text-xs font-bold text-secundario uppercase mb-1.5 ml-1">Asunto
+                                        del Correo</label>
+                                    <input type="text" id="ajuste-mail-asunto"
+                                        placeholder="Ej. ¡Nos vemos mañana en nuestra boda!"
+                                        class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-primario focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-secundario uppercase mb-1.5 ml-1">Mensaje
+                                        Personalizado</label>
+                                    <textarea id="ajuste-mail-mensaje" rows="3"
+                                        placeholder="Ej. No olviden llevar zapatos cómodos porque vamos a bailar toda la noche..."
+                                        class="w-full bg-white border border-slate-200 rounded-xl p-4 text-sm text-primario focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"></textarea>
+                                </div>
+
+                                <div class="md:col-span-2 mt-2 pt-6 border-t border-slate-200">
+                                    <h4 class="text-sm font-bold text-primario mb-4 flex items-center gap-2"><i
+                                            class="ph-bold ph-sliders"></i>
+                                        Elementos Dinámicos</h4>
+
+                                    <div class="space-y-4">
+                                        <div
+                                            class="flex flex-col p-4 bg-white rounded-xl border border-slate-200 shadow-sm transition-all hover:border-blue-200">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                    <div
+                                                        class="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center">
+                                                        <i class="ph-bold ph-clock"></i>
+                                                    </div> Mini-Itinerario
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" id="chk-mail-hora" class="sr-only peer"
+                                                        onchange="document.getElementById('div-mail-hora').classList.toggle('hidden', !this.checked)">
+                                                    <div
+                                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500">
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <div id="div-mail-hora"
+                                                class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 pt-4 border-t border-slate-100">
+                                                <div
+                                                    class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 shadow-sm">
+                                                    <div class="flex gap-2 mb-2">
+                                                        <input type="text" id="ajuste-mail-h1-icon" value="💍"
+                                                            title="Emoji / Icono"
+                                                            class="w-10 text-center px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                        <input type="text" id="ajuste-mail-h1-tit" value="Ceremonia"
+                                                            placeholder="Título"
+                                                            class="flex-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase text-secundario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                    </div>
+                                                    <input type="text" id="ajuste-mail-h1" placeholder="Ej. 17:00 hrs"
+                                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-primario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                </div>
+                                                <div
+                                                    class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 shadow-sm">
+                                                    <div class="flex gap-2 mb-2">
+                                                        <input type="text" id="ajuste-mail-h2-icon" value="🥂"
+                                                            title="Emoji / Icono"
+                                                            class="w-10 text-center px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                        <input type="text" id="ajuste-mail-h2-tit" value="Recepción"
+                                                            placeholder="Título"
+                                                            class="flex-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase text-secundario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                    </div>
+                                                    <input type="text" id="ajuste-mail-h2" placeholder="Ej. 19:30 hrs"
+                                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-primario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                </div>
+                                                <div
+                                                    class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 shadow-sm">
+                                                    <div class="flex gap-2 mb-2">
+                                                        <input type="text" id="ajuste-mail-h3-icon" value="🍽️"
+                                                            title="Emoji / Icono"
+                                                            class="w-10 text-center px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                        <input type="text" id="ajuste-mail-h3-tit" value="Banquete"
+                                                            placeholder="Título"
+                                                            class="flex-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase text-secundario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                    </div>
+                                                    <input type="text" id="ajuste-mail-h3" placeholder="Ej. 20:30 hrs"
+                                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-primario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                </div>
+                                                <div
+                                                    class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 shadow-sm">
+                                                    <div class="flex gap-2 mb-2">
+                                                        <input type="text" id="ajuste-mail-h4-icon" value="🪩"
+                                                            title="Emoji / Icono"
+                                                            class="w-10 text-center px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                                        <input type="text" id="ajuste-mail-h4-tit" value="Fiesta"
+                                                            placeholder="Título"
+                                                            class="flex-1 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold uppercase text-secundario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                    </div>
+                                                    <input type="text" id="ajuste-mail-h4" placeholder="Ej. 22:00 hrs"
+                                                        class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-primario focus:ring-2 focus:ring-blue-500 outline-none">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="flex flex-col p-4 bg-white rounded-xl border border-slate-200 shadow-sm transition-all hover:border-emerald-200">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                    <div
+                                                        class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                                        <i class="ph-bold ph-cursor-click"></i>
+                                                    </div> Botón de
+                                                    Acción (Link)
+                                                </div>
+                                                <label class="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" id="chk-mail-boton" class="sr-only peer"
+                                                        onchange="document.getElementById('div-mail-boton').classList.toggle('hidden', !this.checked)">
+                                                    <div
+                                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                                                    </div>
+                                                </label>
+                                            </div>
+                                            <div id="div-mail-boton"
+                                                class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 pt-3 border-t border-slate-100">
+                                                <div>
+                                                    <label
+                                                        class="block text-[10px] font-bold text-secundario uppercase mb-1">Texto
+                                                        del Botón</label>
+                                                    <input type="text" id="ajuste-mail-btn-texto"
+                                                        placeholder="Ej. 📍 Abrir Google Maps"
+                                                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                                </div>
+                                                <div>
+                                                    <label
+                                                        class="block text-[10px] font-bold text-secundario uppercase mb-1">Link
+                                                        (URL)</label>
+                                                    <input type="url" id="ajuste-mail-mapa" placeholder="https://..."
+                                                        class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div
+                                            class="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200 shadow-sm transition-all hover:border-purple-200">
+                                            <div class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                <div
+                                                    class="w-7 h-7 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center">
+                                                    <i class="ph-bold ph-qr-code"></i>
+                                                </div> Incluir Ticket QR
+                                            </div>
+                                            <label class="relative inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" id="chk-mail-qr" class="sr-only peer" checked>
+                                                <div
+                                                    class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500">
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-col xl:flex-row items-center justify-between pt-6 border-t border-slate-200 mt-6 gap-6">
+
+                                <div
+                                    class="bg-slate-50 px-5 py-3 rounded-xl text-sm font-bold text-secundario border border-slate-200 w-full xl:w-auto text-center flex items-center justify-center gap-2">
+                                    <i class="ph-fill ph-paper-plane-tilt text-lg text-slate-400"></i> Envíos
+                                    restantes: <span id="mail-usos-restantes"
+                                        class="text-primario font-black text-lg ml-1">3</span> / 3
+                                </div>
+
+                                <div class="flex flex-wrap justify-center gap-3 w-full xl:w-auto">
+                                    <button onclick="window.vistaPreviaCorreo()"
+                                        class="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-secundario border border-slate-200 px-5 py-3 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                        <i class="ph-bold ph-eye text-lg"></i> Vista Previa
+                                    </button>
+
+                                    <button onclick="window.guardarAjustesCorreo()"
+                                        class="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-secundario border border-slate-200 px-5 py-3 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2">
+                                        <i class="ph-bold ph-floppy-disk text-lg"></i> Guardar Textos
+                                    </button>
+
+                                    <button onclick="window.enviarMailingMasivo()"
+                                        class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:opacity-90 text-white px-8 py-3 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5">
+                                        <i class="ph-bold ph-paper-plane-right text-lg"></i> Enviar Masivo
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <div id="vista-detalles" class="vista-seccion hidden animate-fade-in">
+
+                    <div
+                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(210px,1fr))] gap-4 lg:gap-6 mb-6 lg:mb-8 w-full">
+
+                        <div
+                            class="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 cursor-default group">
+                            <p
+                                class="text-[10px] sm:text-xs text-secundario font-bold uppercase tracking-wide mb-1 flex items-center gap-2 relative z-10">
+                                <i class="ph-fill ph-users text-brand text-lg"></i> Total Asistentes
+                            </p>
+                            <div class="mt-auto relative z-10">
+                                <h3 class="text-4xl font-black text-primario" id="stat-det-total">0</h3>
+                            </div>
+                        </div>
+
+                        <div id="tarjeta-edades"
+                            class="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 cursor-default group"
+                            style="display: none;">
+                            <p
+                                class="text-[10px] sm:text-xs text-secundario font-bold uppercase tracking-wide mb-3 flex items-center gap-2 relative z-10">
+                                <i class="ph-fill ph-user-circle text-blue-500 text-lg"></i> Tipo de Invitado
+                            </p>
+                            <div class="grid grid-cols-2 gap-2 mt-auto relative z-10">
+                                <div
+                                    class="flex flex-col items-center justify-center bg-blue-50 rounded-xl p-2 text-center border border-blue-100 transition-colors hover:bg-blue-100/80">
+                                    <span
+                                        class="block text-[9px] sm:text-[10px] text-blue-600/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Adultos</span>
+                                    <span class="text-xl sm:text-2xl font-black text-blue-600 leading-none"
+                                        id="stat-det-adultos">0</span>
+                                </div>
+                                <div
+                                    class="flex flex-col items-center justify-center bg-cyan-50 rounded-xl p-2 text-center border border-cyan-100 transition-colors hover:bg-cyan-100/80">
+                                    <span
+                                        class="block text-[9px] sm:text-[10px] text-cyan-600/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Niños</span>
+                                    <span class="text-xl sm:text-2xl font-black text-cyan-600 leading-none"
+                                        id="stat-det-ninos">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tarjeta-menu"
+                            class="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 cursor-default group"
+                            style="display: none;">
+                            <p
+                                class="text-[10px] sm:text-xs text-secundario font-bold uppercase tracking-wide mb-3 flex items-center gap-2 relative z-10">
+                                <i class="ph-fill ph-fork-knife text-amber-500 text-lg"></i> Menú General
+                            </p>
+                            <div class="grid grid-cols-2 gap-2 mt-auto relative z-10">
+                                <div
+                                    class="flex flex-col items-center justify-center bg-amber-50 rounded-xl p-2 text-center border border-amber-100 transition-colors hover:bg-amber-100/80">
+                                    <span
+                                        class="block text-[9px] sm:text-[10px] text-amber-700/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Tradicional</span>
+                                    <span class="text-xl sm:text-2xl font-black text-amber-700 leading-none"
+                                        id="stat-det-trad">0</span>
+                                </div>
+                                <div
+                                    class="flex flex-col items-center justify-center bg-yellow-50 rounded-xl p-2 text-center border border-yellow-200 transition-colors hover:bg-yellow-100/80">
+                                    <span
+                                        class="block text-[9px] sm:text-[10px] text-yellow-700/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Infantil</span>
+                                    <span class="text-xl sm:text-2xl font-black text-yellow-700 leading-none"
+                                        id="stat-det-inf">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tarjeta-dietas"
+                            class="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 cursor-default group"
+                            style="display: none;">
+                            <p
+                                class="text-[10px] sm:text-xs text-secundario font-bold uppercase tracking-wide mb-3 flex items-center gap-2 relative z-10">
+                                <i class="ph-fill ph-leaf text-green-500 text-lg"></i> Dietas Especiales
+                            </p>
+                            <div class="grid grid-cols-2 gap-2 mt-auto relative z-10">
+                                <div
+                                    class="flex flex-col items-center justify-center bg-green-50 rounded-xl p-2 text-center border border-green-100 transition-colors hover:bg-green-100/80">
+                                    <span
+                                        class="block text-[8px] sm:text-[9px] text-green-600/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Vegetariano</span>
+                                    <span class="text-xl sm:text-2xl font-black text-green-600 leading-none"
+                                        id="stat-det-veg">0</span>
+                                </div>
+                                <div
+                                    class="flex flex-col items-center justify-center bg-emerald-50 rounded-xl p-2 text-center border border-emerald-100 transition-colors hover:bg-emerald-100/80">
+                                    <span
+                                        class="block text-[9px] sm:text-[10px] text-emerald-600/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Vegano</span>
+                                    <span class="text-xl sm:text-2xl font-black text-emerald-600 leading-none"
+                                        id="stat-det-vegan">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tarjeta-mesas"
+                            class="bg-white rounded-2xl p-4 lg:p-5 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden transition-all hover:shadow-md hover:-translate-y-1 cursor-default group"
+                            style="display: none;">
+                            <p
+                                class="text-[10px] sm:text-xs text-secundario font-bold uppercase tracking-wide mb-3 flex items-center gap-2 relative z-10">
+                                <i class="ph-fill ph-table text-orange-500 text-lg"></i> Asignación Mesas
+                            </p>
+                            <div class="grid grid-cols-2 gap-2 mt-auto relative z-10">
+                                <div
+                                    class="flex flex-col items-center justify-center bg-orange-50 rounded-xl p-2 text-center border border-orange-100 transition-colors hover:bg-orange-100/80">
+                                    <span
+                                        class="block text-[9px] sm:text-[10px] text-orange-600/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Con
+                                        Mesa</span>
+                                    <span class="text-xl sm:text-2xl font-black text-orange-600 leading-none"
+                                        id="stat-det-mesas-si">0</span>
+                                </div>
+                                <div
+                                    class="flex flex-col items-center justify-center bg-slate-50 rounded-xl p-2 text-center border border-slate-200 transition-colors hover:bg-slate-100/80">
+                                    <span
+                                        class="block text-[8px] sm:text-[9px] text-slate-500/90 font-bold uppercase tracking-tight leading-tight mb-0.5">Sin
+                                        Asignar</span>
+                                    <span class="text-xl sm:text-2xl font-black text-slate-500 leading-none"
+                                        id="stat-det-mesas-no">0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+
+                    <div
+                        class="bg-white rounded-2xl shadow-suave border border-pink-50 overflow-hidden flex flex-col min-h-[60vh]">
+
+                        <div
+                            class="px-6 lg:px-8 py-6 border-b border-pink-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white">
+                            <div class="flex items-center gap-3 sm:gap-4 mb-6 w-full">
+
+                                <div class="w-full">
+                                    <h2 class="text-xl sm:text-2xl font-black text-primario">Detalles de los
+                                        asistentes</h2>
+                                    <p class="text-sm text-secundario font-medium mt-0.5" id="subtitulo-detalles">
+                                        Desglose general de asistentes.
+                                    </p>
+                                </div>
+                            </div>
+                            <div
+                                class="flex flex-row items-center justify-end gap-2 sm:gap-4 w-full mb-4 px-1 -mx-1 py-1">
+                                <div class="relative flex-1 sm:flex-none sm:w-56 shrink-0 z-10 p-[3px] -m-[3px]">
+                                    <i
+                                        class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" id="buscador-detalles-vip"
+                                        class="w-full sm:max-w-xs pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:bg-white transition-all shadow-sm"
+                                        oninput="window.buscarDetallesVIPDebounced ? window.buscarDetallesVIPDebounced(this.value) : window.buscarDetallesVIP(this.value)"
+                                        placeholder="Buscar nombre, menú...">
+                                </div>
+
+                                <div id="contenedor-acciones-masivas" class="hidden items-center gap-2 animate-fade-in">
+                                    <button onclick="window.edicionMasivaVIP()"
+                                        class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                        <i class="ph-bold ph-pencil-simple text-blue-600 text-lg"></i> <span
+                                            class="hidden sm:inline">Edición</span>
+                                    </button>
+                                    <button onclick="window.eliminarMasivoVIP()"
+                                        class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                                        <i class="ph-bold ph-trash text-red-600 text-lg"></i> <span
+                                            class="hidden sm:inline">Eliminar</span>
+                                    </button>
+                                </div>
+
+                                <button onclick="window.toggleAllCheckboxesVIP()" id="btn-select-all-vip"
+                                    data-checked="false"
+                                    class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm shrink-0">
+                                    <i class="ph-bold ph-check-square-offset text-gray-500 text-lg"></i> <span
+                                        class="hidden sm:inline">Todos</span>
+                                </button>
+
+                                <button onclick="window.exportarBanquete()"
+                                    class="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-sm shrink-0">
+                                    <i class="ph-bold ph-download-simple text-brand text-lg"></i> <span
+                                        class="hidden sm:inline">Exportar</span>
+                                </button>
+
+                                <button onclick="window.toggleAgrupadoPorFamilia()" id="btn-toggle-grupos-detalles"
+                                    class="btn-toggle-grupos bg-orange-500 hover:bg-orange-600 text-white border border-transparent px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap shrink-0 shadow-sm shadow-orange-500/20">
+                                    <i class="ph-bold ph-tree-structure text-lg"></i>
+                                    <span class="hidden sm:inline toggle-label">Agrupar Familias</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+
+                            <table id="tabla-modo-vip" class="w-full text-left min-w-[800px] hidden">
+                                <thead>
+                                    <tr class="bg-slate-50/50">
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Familia</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Asistente</th>
+                                        <th id="th-edades"
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Tipo
+                                        </th>
+                                        <th id="th-mesa"
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Mesa</th>
+                                        <th id="th-menu"
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Menú</th>
+                                        <th id="th-alergias"
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Alergias o Notas</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider text-right">
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-detalles-vip" class="divide-y divide-gray-50"></tbody>
+                            </table>
+
+                            <table id="tabla-modo-basico" class="w-full text-left min-w-[800px] hidden">
+                                <thead>
+                                    <tr class="bg-slate-50/50">
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Titular / Quien
+                                            Confirma</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider">
+                                            Código Usado</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider text-center">
+                                            Adultos
+                                        </th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider text-center">
+                                            Niños</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider text-center">
+                                            Total</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-secundario uppercase tracking-wider text-right">
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-detalles-basico" class="divide-y divide-gray-50"></tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    </main>
+    </div>
+    <script type="module" src="./js/custom-modal.js"></script>
+    <script type="module" src="./js/custom-drawer.js"></script>
+    <script type="module" src="./js/firebase-config.js"></script>
+    <script type="module" src="./js/ui.js"></script>
+    <script type="module" src="js/dashboard-ui.js" charset="UTF-8"></script>
+    <script type="module" src="js/dashboard-alerts.js" charset="UTF-8"></script>
+
+    <script type="module" src="js/dashboard-layout.js" charset="UTF-8"></script>
+    <script type="module" src="js/dashboard-tables.js" charset="UTF-8"></script>
+    <script type="module" src="js/dashboard-wa.js" charset="UTF-8"></script>
+    <script type="module" src="js/dashboard-excel.js" charset="UTF-8"></script>
+
+    <script type="module" src="js/dashboard-core.js" charset="UTF-8"></script>
+    <script type="module" src="js/dashboard-groups.js" charset="UTF-8"></script>
+    <script type="module" src="./js/excel-import.js"></script>
+    <script type="module" src="./js/actividad.js"></script>
+
+    <!-- Native Modal Container -->
+    <div id="native-modal-overlay"
+        class="fixed inset-0 z-[100] hidden bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0 flex items-center justify-center p-4">
+        <!-- Contenido Omitido para enfocarnos en inyectar el drawer debajo -->
+        <div id="native-modal-window"
+            class="bg-white/95 backdrop-blur-2xl border border-white/50 shadow-2xl rounded-[32px] p-6 sm:p-8 w-full max-w-[400px] transform scale-95 opacity-0 transition-all duration-300">
+            <div id="native-modal-icon-container"
+                class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 mb-5">
+                <i id="native-modal-icon" class="ph-bold ph-info text-3xl text-blue-600"></i>
+            </div>
+            <div class="text-center">
+                <h3 id="native-modal-title" class="text-2xl font-black text-slate-800 tracking-tight mb-2"></h3>
+                <div id="native-modal-text" class="text-slate-500 font-medium text-[15px] leading-relaxed"></div>
+            </div>
+            <div id="native-modal-buttons" class="mt-8 flex flex-col-reverse sm:flex-row gap-3">
+                <button id="native-modal-btn-cancel"
+                    class="hidden w-full inline-flex justify-center items-center px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 transition-all outline-none focus:ring-4 focus:ring-slate-100 sm:w-auto sm:flex-1">
+                    Cancelar
+                </button>
+                <button id="native-modal-btn-confirm"
+                    class="w-full inline-flex justify-center items-center px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 active:scale-95 transition-all outline-none focus:ring-4 focus:ring-blue-100 sm:w-auto sm:flex-1">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NATIVE DRAWER (Ahora Flotante Central) -->
+    <div id="native-drawer-overlay"
+        class="fixed inset-0 z-[100] hidden bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300 opacity-0 flex items-center justify-center p-4 sm:p-6">
+
+        <div id="native-drawer-window"
+            class="w-full max-w-xl bg-slate-50/95 backdrop-blur-3xl border border-white/50 shadow-2xl rounded-[32px] flex flex-col max-h-[90vh] sm:max-h-[85vh] transform scale-95 opacity-0 transition-all duration-300">
+
+            <!-- Drawer Header -->
+            <div
+                class="shrink-0 px-6 py-5 sm:px-8 border-b border-slate-200/60 bg-white/50 rounded-t-[32px] flex items-start justify-between">
+                <div class="pr-2">
+                    <h2 id="native-drawer-title" class="text-2xl font-black text-slate-800 tracking-tight"></h2>
+                    <p id="native-drawer-subtitle" class="text-sm font-medium text-secundario mt-1 hidden"></p>
+                </div>
+                <div class="ml-3 flex h-7 items-center">
+                    <button onclick="NativeDrawer.close({isConfirmed: false, isDismissed: true})" type="button"
+                        class="relative rounded-full bg-slate-100 p-2 text-slate-400 hover:bg-slate-200 border-none hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 transition-colors">
+                        <i class="ph-bold ph-x text-lg leading-none"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Drawer Content Body (Scrollable) -->
+            <div class="relative flex-1 px-6 py-6 sm:px-8 overflow-y-auto custom-scrollbar">
+                <div id="native-drawer-content" class="min-h-full">
+                    <!-- HTML dinámico se inyecta aquí -->
+                </div>
+            </div>
+
+            <!-- Drawer Footer (Sticky Actions) -->
+            <div
+                class="shrink-0 flex flex-col-reverse justify-end gap-3 px-6 py-5 sm:flex-row sm:px-8 bg-white/80 border-t border-slate-200/60 rounded-b-[32px]">
+                <button id="native-drawer-btn-cancel" type="button"
+                    class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 active:scale-95 transition-all outline-none focus:ring-4 focus:ring-slate-100">
+                    Cancelar
+                </button>
+                <button id="native-drawer-btn-confirm" type="submit"
+                    class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 bg-brand text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-all outline-none focus:ring-4 focus:ring-brand focus:ring-offset-1 border border-transparent hover:bg-brand-dark">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Bienvenida — lógica en js/dashboard-modal.js -->
+    <script src="./js/dashboard-modal.js" defer></script>
+
+
+    <!-- Fix iOS: drag-scroll manual para barras de píldoras Y tablas --
+         Soluciona el problema en Safari iOS donde los <button>/<th> dentro de
+         overflow-x:auto capturan el touchstart antes de que el contenedor
+         pueda iniciar el scroll. El handler manual toma el control del gesto
+         y desplaza el scrollLeft directamente, sin depender de touch-action. -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            function initDragScroll(el) {
+                if (!el || el._dragScrollInit) return;
+                el._dragScrollInit = true;
+                let startX, startY, startScroll, isDragging = false, moved = false;
+
+                el.addEventListener('touchstart', function (e) {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                    startScroll = el.scrollLeft;
+                    isDragging = true;
+                    moved = false;
+                }, { passive: true });
+
+                el.addEventListener('touchmove', function (e) {
+                    if (!isDragging) return;
+                    const dx = startX - e.touches[0].clientX;
+                    const dy = startY - e.touches[0].clientY;
+                    // Solo activar scroll horizontal si el gesto es predominantemente horizontal
+                    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 5) {
+                        moved = true;
+                        el.scrollLeft = startScroll + dx;
+                    }
+                }, { passive: true });
+
+                el.addEventListener('touchend', function (e) {
+                    isDragging = false;
+                    // Si fue un swipe real, cancelar el click para no activar el botón
+                    if (moved) {
+                        e.target.addEventListener('click', function stop(ev) {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            e.target.removeEventListener('click', stop, true);
+                        }, { capture: true, once: true });
+                    }
+                }, { passive: true });
+            }
+
+            // Inicializar todos los contenedores scrollables horizontales
+            function initAll() {
+                document.querySelectorAll('.overflow-x-auto, #barra-filtros, .filtros-bar-ios').forEach(initDragScroll);
+            }
+            initAll();
+
+            // Observar contenedores generados dinámicamente (secciones VIP, Invitaciones, etc.)
+            new MutationObserver(initAll).observe(document.body, { childList: true, subtree: true });
+        });
+    </script>
+</body>
+
+</html>
